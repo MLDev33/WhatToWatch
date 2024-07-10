@@ -19,7 +19,14 @@ const PROVIDER_IDS = {
   'Max': 1899, // ID de Max
   'Crunchyroll': 283, // ID de Crunchyroll
 };
+// Fonction pour obtenir les détails des fournisseurs de streaming pour un film ou une série
 
+function getProviderDetails(type, id) {
+  const url = `${BASE_URL}/${type}/${id}/watch/providers?api_key=${API_KEY}`;
+  return fetch(url)
+    .then(response => response.json())
+    .then(data => data.results?.FR?.flatrate || []);
+}
 // Fonction principale pour rechercher des films et séries sur différentes plateformes
 function rechercheContenuParPlateforme(plateformes, region = 'FR', page = 1) {
   // Convertit les noms des plateformes en IDs en utilisant le mapping PROVIDER_IDS
