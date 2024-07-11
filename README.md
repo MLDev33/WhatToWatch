@@ -78,8 +78,8 @@ rechercheContenuParPlateforme(['Netflix', 'Amazon Prime Video'], 'FR', 1)
 Les résultats sont renvoyés sous forme d'objet avec les propriétés suivantes :
 
 contenu : tableau d'objets représentant les films et séries
-totalPages : nombre total de pages de résultats
-currentPage : numéro de la page actuelle
+TotalItems : represente le nombre de card actuellement présenté
+itemsPerPage : represente la limite a chaque fetch
 
 Chaque élément de contenu contient :
 
