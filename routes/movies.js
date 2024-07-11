@@ -254,7 +254,7 @@ router.get('/recherche/:plateformes/:region/:limite', (req, res) => {
     .then(resultat => res.status(200).json({result : true , resultat}))
     .catch(error => res.status(500).json({ message: error }));
 });
-
+//route test pour thunder client, decocher modifier recocher http://localhost:3000/movies/search?types=tv&language=fr-FR&include_adult=false&sort_by=popularity.desc&genre=16,10765&release_date_gte=2020-01-01&release_date_lte=2023-12-31&region=FR&plateformes=Netflix,Amazon Prime Video&page=1
 
 
 
