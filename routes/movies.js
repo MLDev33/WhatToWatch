@@ -37,11 +37,21 @@ async function getProviderDetails(type, id) {
 //On essaye d'obtenir la propriété flatrate de l'objet fr (pour la france) , si elle n'existe pas on retourne un tableau vide 
 //ce qui evite les erreurs de type type error et ne bloquera pas les logiques de map , filter ... 
 // Fonction pour rechercher du contenu (film et serie) par plateforme de streaming , region (langue !== region)et limite d'items
-async function rechercheContenuParPlateforme(plateformes, region = 'FR',  limite = 10) {
+async function rechercheContenuParPlateforme(plateformes, region = 'FR',  limite = 50) {
+  console.log('Received plateformes in function:', plateformes);
+  console.log('PROVIDER_IDS:', PROVIDER_IDS);
+  if (!plateformes || (Array.isArray(plateformes) && plateformes.length === 0)) {
+    return { error: "Aucune plateforme sélectionnée", plateformes: plateformes };
+  }
   try {
     const plateformesIds = plateformes
-      .map(p => (typeof p === 'string' ? PROVIDER_IDS[p] : p))
-      .filter(id => id !== undefined);
+    .map(p => {
+      const platformName = typeof p === 'string' ? p.toLowerCase() : p;
+      const id = Object.entries(PROVIDER_IDS).find(([key, value]) => key.toLowerCase() === platformName)?.[1];
+      console.log(`Converting platform ${p} to ID: ${id}`);
+      return id;
+    })
+    .filter(id => id !== undefined);
 
     if (plateformesIds.length === 0) {
       return "Aucune plateforme valide sélectionnée.";
@@ -80,6 +90,7 @@ async function rechercheContenuParPlateforme(plateformes, region = 'FR',  limite
           annee: new Date(item.release_date || item.first_air_date).getFullYear(),
           //pareil date de sortie pour les films ou air date pour les series
           description: item.overview,
+          poster : item.poster_path,
           popularite: item.vote_average,
           plateformes: providers.map(p => ({
             id: p.provider_id,
@@ -100,6 +111,7 @@ async function rechercheContenuParPlateforme(plateformes, region = 'FR',  limite
       contenu: contenu,
       totalItems: contenu.length,
       itemsPerPage: limite,
+      plateformesUtilisees : plateformesIds,
       //contenu : ce qui est retourné par les promesses
       //totalItems : le nombre total de contenu
       //itemsperpage : limite fixé dans le fetch
@@ -110,6 +122,12 @@ async function rechercheContenuParPlateforme(plateformes, region = 'FR',  limite
     return "Une erreur est survenue lors de la recherche.";
   }
 }
+
+
+
+
+
+
 //------------------------------------EXPERIMENTAL------------------------------------//
 //essai de faire une route entierement modulable selon les options donnes en params depuis le front
 /*TMDB permet de choisir
@@ -132,6 +150,46 @@ LES DEUX DOIVENT ETRE UTILISES ENSEMBLE ]
 const VALID_MOVIE_GENRES = [28, 12, 16, 35, 80, 99, 18, 10751, 14, 36, 27, 10402, 9648, 10749, 878, 10770, 53, 10752, 37];
 const VALID_TV_GENRES = [10759, 16, 35, 80, 99, 18, 10751, 10762, 9648, 10763, 10764, 10765, 10766, 10767, 10768, 37];
 
+const MOVIE_GENRE_NAMES = {
+  28: 'Action',
+  12: 'Adventure',
+  16: 'Animation',
+  35: 'Comedy',
+  80: 'Crime',
+  99: 'Documentary',
+  18: 'Drama',
+  10751: 'Family',
+  14: 'Fantasy',
+  36: 'History',
+  27: 'Horror',
+  10402: 'Music',
+  9648: 'Mystery',
+  10749: 'Romance',
+  878: 'Science Fiction',
+  10770: 'TV Movie',
+  53: 'Thriller',
+  10752: 'War',
+  37: 'Western'
+};
+
+const TV_GENRE_NAMES = {
+  10759: 'Action & Adventure',
+  16: 'Animation',
+  35: 'Comedy',
+  80: 'Crime',
+  99: 'Documentary',
+  18: 'Drama',
+  10751: 'Family',
+  10762: 'Kids',
+  9648: 'Mystery',
+  10763: 'News',
+  10764: 'Reality',
+  10765: 'Sci-Fi & Fantasy',
+  10766: 'Soap',
+  10767: 'Talk',
+  10768: 'War & Politics',
+  37: 'Western'
+};
 
 function getProviderDetailsWithRegion(type, id, region) {
   const url = `${BASE_URL}/${type}/${id}/watch/providers?api_key=${API_KEY}`;
@@ -202,12 +260,18 @@ function rechercheContenu(req, res) {
 
         return data.results.map(item => {
           return getProviderDetailsWithRegion(type, item.id, region)
-            .then(providers => ({
+            .then(providers => (
+            {
               type: typeName,
+              id : item.id,
               titre: item.title || item.name,
+              poster: item.poster_path,
+              adult : item.adult,
+              genre : item.genre_ids.map(id => type === 'movie' ? MOVIE_GENRE_NAMES[id] : TV_GENRE_NAMES[id]),
               annee: new Date(item.release_date || item.first_air_date).getFullYear(),
               description: item.overview,
               popularite: item.vote_average,
+              vote_count: item.vote_count,
               plateformes: providers.map(p => ({
                 id: p.provider_id,
                 nom: p.provider_name
@@ -237,10 +301,12 @@ function rechercheContenu(req, res) {
 // Route pour la recherche de contenu
 router.get('/search', rechercheContenu);
 
+
 //------------------------------------Exemples------------------------------------//
 
 // Exemple d'utilisation avec Netflix et Amazon Prime Video
-/*rechercheContenuParPlateforme(['Netflix', 119], 'FR',  30)
+/*
+rechercheContenuParPlateforme(['Netflix', 119], 'FR',  30)
   .then(resultat => console.log(JSON.stringify(resultat, null, 2))) //affiche le resultat, null permet de formater le json, 2 est le nombre d'espaces
   .catch(error => console.error(error));
 */
@@ -254,24 +320,38 @@ router.get('/recherche/:plateformes/:region/:limite', (req, res) => {
     .then(resultat => res.status(200).json({result : true , resultat}))
     .catch(error => res.status(500).json({ message: error }));
 });
-//route test pour thunder client, decocher modifier recocher http://localhost:3000/movies/search?types=tv&language=fr-FR&include_adult=false&sort_by=popularity.desc&genre=16,10765&release_date_gte=2020-01-01&release_date_lte=2023-12-31&region=FR&plateformes=Netflix,Amazon Prime Video&page=1
+//route test pour thunder client, decocher m// Simule une requête HTTP avec les paramètres nécessaires http://localhost:3000/movies/search?types=tv&language=fr-FR&include_adult=false&sort_by=popularity.desc&genre=16,10765&release_date_gte=2020-01-01&release_date_lte=2023-12-31&region=FR&plateformes=Netflix,Amazon Prime Video&page=1
 
 
+//route pour fetch trendings au lancement de Home
 
+router.get('/trendings', async (req, res) => {
+  console.log('raw platformes:', req.query.plateformes);
+  try {
+    const { plateformes, region = 'EN', limite = 50 } = req.query;
+    console.log('Received query params:', { plateformes, region, limite });
 
+    // Vérifiez si 'plateformes' est défini
+    if (!plateformes) {
+      throw new Error("Le paramètre 'plateformes' est requis");
+    }
 
+    let plateformeArray;
+    console.log('Parsed plateformeArray:', plateformeArray);
+    try {
+      plateformeArray = JSON.parse(plateformes);
+    } catch (error) {
+      throw new Error("Erreur de parsing JSON pour 'plateformes'");
+    }
 
-
-
-
-
-
-
-
-
-
-
-
+    const result = await rechercheContenuParPlateforme(plateformeArray, region, parseInt(limite));
+    res.status(200).json({ success: true, result });
+    console.log('Result:', result);
+  } catch (error) {
+    console.error('Error occurred:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
 
 
 // Exporte le routeur pour être utilisé dans d'autres parties de l'application
