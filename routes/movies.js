@@ -1,3 +1,4 @@
+
 // Importation du module express pour la création du serveur et des routes
 var express = require('express');
 // Création d'un routeur express pour gérer les routes spécifiques à ce module
@@ -92,6 +93,7 @@ async function rechercheContenuParPlateforme(plateformes, region = 'FR',  limite
           description: item.overview,
           poster : item.poster_path,
           popularite: item.vote_average,
+          vote : item.vote_count,
           plateformes: providers.map(p => ({
             id: p.provider_id,
             nom: p.provider_name
@@ -328,7 +330,7 @@ router.get('/recherche/:plateformes/:region/:limite', (req, res) => {
 router.get('/trendings', async (req, res) => {
   console.log('raw platformes:', req.query.plateformes);
   try {
-    const { plateformes, region = 'EN', limite = 50 } = req.query;
+    const { plateformes, region = 'FR', limite = 50 } = req.query;
     console.log('Received query params:', { plateformes, region, limite });
 
     // Vérifiez si 'plateformes' est défini
@@ -337,11 +339,16 @@ router.get('/trendings', async (req, res) => {
     }
 
     let plateformeArray;
-    console.log('Parsed plateformeArray:', plateformeArray);
     try {
       plateformeArray = JSON.parse(plateformes);
+      console.log('Parsed plateformeArray:', plateformeArray);
     } catch (error) {
       throw new Error("Erreur de parsing JSON pour 'plateformes'");
+    }
+
+    // Vérifiez que plateformeArray est bien un tableau
+    if (!Array.isArray(plateformeArray)) {
+      throw new Error("'plateformes' doit être un tableau");
     }
 
     const result = await rechercheContenuParPlateforme(plateformeArray, region, parseInt(limite));
