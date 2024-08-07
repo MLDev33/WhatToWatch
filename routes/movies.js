@@ -109,11 +109,14 @@ async function rechercheContenuParPlateforme(plateformes, region = 'FR',  limite
     //le resultat de b.popularite - a.popularite , si il est negatif , b est place avant a , si il est positif a est place avant b
     //si il est nul , l'ordre reste le meme
     //exemple the boys a 8.5 de popularite et flash 7.7 , le resultat est -0,8 donc the boys sera place avant flash
+    
+
     return {
       contenu: contenu,
       totalItems: contenu.length,
       itemsPerPage: limite,
       plateformesUtilisees : plateformesIds,
+      plateformesUtiliseesNoms : plateformes.map(p => typeof p === 'string' ? p : Object.keys(PROVIDER_IDS).find(key => PROVIDER_IDS[key] === p)),
       //contenu : ce qui est retourné par les promesses
       //totalItems : le nombre total de contenu
       //itemsperpage : limite fixé dans le fetch
@@ -325,7 +328,7 @@ router.get('/recherche/:plateformes/:region/:limite', (req, res) => {
 //route test pour thunder client, decocher m// Simule une requête HTTP avec les paramètres nécessaires http://localhost:3000/movies/search?types=tv&language=fr-FR&include_adult=false&sort_by=popularity.desc&genre=16,10765&release_date_gte=2020-01-01&release_date_lte=2023-12-31&region=FR&plateformes=Netflix,Amazon Prime Video&page=1
 
 
-//route pour fetch trendings au lancement de Home
+//route pour fetch des media  au lancement de Home
 
 router.get('/trendings', async (req, res) => {
   console.log('raw platformes:', req.query.plateformes);
