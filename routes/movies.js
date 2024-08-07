@@ -1,6 +1,7 @@
 
 // Importation du module express pour la création du serveur et des routes
 var express = require('express');
+const { get } = require('mongoose');
 // Création d'un routeur express pour gérer les routes spécifiques à ce module
 var router = express.Router();
 // Importation du module node-fetch pour effectuer des requêtes HTTP
@@ -11,16 +12,27 @@ const BASE_URL = 'https://api.themoviedb.org/3';
 
 // cette liste contient les identifiants des plateformes de streaming pour lesquelles on peut rechercher du contenu
 // cette liste n'est pas exhaustive
-const PROVIDER_IDS = {
-  'Netflix': 8,
-  'Netflix basic with Ads': 1796,
-  'Amazon Prime Video': 119,
-  'Disney+': 337,
-  'Hulu': 15,
-  'Canal+': 381,
-  'Max': 1899,
-  'Crunchyroll': 283,
-};
+// pour obtenir la liste de tout les providrs
+/*
+const url = `https://api.themoviedb.org/3/watch/providers/movie?api_key=${API_KEY}`;
+
+fetch(url)
+  .then(response => response.json())
+  .then(data => {
+    const providers = data.results;
+    console.log('Providers:', providers);
+
+    const providerMap = {};
+    providers.forEach(p => {
+      providerMap[p.provider_name] = p.provider_id;
+    });
+    console.log('Provider Map:', providerMap);
+  })
+  .catch(error => {
+    console.error('Une erreur est survenue:', error);
+  });
+*/
+const PROVIDER_IDS = { "Apple TV": 2, "Google Play Movies": 3, "Fandango At Home": 7, Netflix: 8, "Amazon Prime Video": 119, "Amazon Video": 10, MUBI: 11, Crackle: 12, Hulu: 15, NetMovies: 19, "maxdome Store": 20, Stan: 21, Fandor: 25, Netzkino: 28, "Sky Go": 29, WOW: 30, Alleskino: 33, "MGM Plus": 34, "Rakuten TV": 35, "BBC iPlayer": 38, "Now TV": 39, ITVX: 41, Starz: 43, Looke: 47, Volta: 53, BoxOffice: 54, ShowMax: 55, "OCS Go": 56, "Canal VOD": 58, "Bbox VOD": 59, "Orange VOD": 61, "Atres Player": 62, Filmin: 63, "Filmin Plus": 64, "Filmin Latino": 66, "Microsoft Store": 68, "Pathé Thuis": 71, Videoland: 72, "Tubi TV": 73, Viaplay: 76, AMC: 80, tenplay: 82, "U-NEXT": 84, "Acorn TV": 87, "Naver Store": 96, Watcha: 97, Shudder: 99, GuideDoc: 100, "Channel 4": 103, Timvision: 109, "Infinity+": 110, Ivi: 113, Okko: 115, Amediateka: 116, Kinopoisk: 117, Hotstar: 122, FXNow: 123, Bookmyshow: 124, "Sky Store": 130, "SBS On Demand": 132, Videobuster: 133, "Foxtel Now": 134, "ABC iview": 135, FILMO: 138, Cineplex: 140, "Sundance Now": 143, iciTouTV: 146, "M6+": 147, ABC: 148, "Movistar Plus": 149, "blue TV": 150, BritBox: 151, History: 155, Lifetime: 157, Viu: 158, Catchplay: 159, iflix: 160, "Claro video": 167, Watchbox: 171, "Netflix Kids": 175, MagentaTV: 178, "Hollywood Suite": 182, "Universal Pictures": 184, Screambox: 185, "YouTube Premium": 188, "Curzon Home Cinema": 189, "Curiosity Stream": 190, Kanopy: 191, YouTube: 192, "AcornTV Amazon Channel": 196, "BritBox Amazon Channel": 197, "Fandor Amazon Channel": 199, "MUBI Amazon Channel": 201, "Screambox Amazon Channel": 202, "Shudder Amazon Channel": 204, "Sundance Now Amazon Channel": 205, "The Roku Channel": 207, PBS: 209, Sky: 210, Freeform: 211, Hoopla: 212, "ARD Mediathek": 219, "Jio Cinema": 220, "Rai Play": 222, "BFI Player": 224, Crave: 230, Zee5: 232, Arte: 234, "YouTube Free": 235, "France TV": 236, "Sony Liv": 237, Universcine: 239, Popcornflix: 241, Meo: 242, "VOD Poland": 245, "7plus": 246, Boomerang: 248, ALLBLK: 251, "Yupp TV": 255, fuboTV: 257, "Criterion Channel": 258, "WWE Network": 260, "History Vault": 268, "Neon TV": 273, QubitTV: 274, "Laugh Out Loud": 275, "Smithsonian Channel": 276, "Pure Flix": 278, Crunchyroll: 283, "Lifetime Movie Club": 284, "BBC Player Amazon Channel": 285, "ZDF Herzkino Amazon Channel": 286, "BFI Player Amazon Channel": 287, "Boomerang Amazon Channel": 288, "Cinemax Amazon Channel": 289, "Hallmark Movies Now Amazon Channel": 290, "MZ Choice Amazon Channel": 291, "PBS Kids Amazon Channel": 293, "PBS Masterpiece Amazon Channel": 294, "Viewster Amazon Channel": 295, "Ziggo TV": 297, "RTL+": 298, "Pluto TV": 300, Joyn: 304, "Crave Starz": 305, Globoplay: 307, "O2 TV": 308, "Sun Nxt": 309, LaCinetek: 310, "Be TV Go": 311, "VRT MAX": 312, "CBC Gem": 314, Hoichoi: 315, "Alt Balaji": 319, "Sky X": 321, "USA Network": 322, "Yle Areena": 323, "Cinemas a la Demande": 324, CTV: 326, FlixFling: 331, "VUDU Free": 332, My5: 333, "Filmtastic Amazon Channel": 334, "Disney Plus": 337, Ruutu: 338, MovistarTV: 339, blutv: 341, puhutv: 342, "Bet+ Amazon Channel": 343, "Rakuten Viki": 344, "Kino on Demand": 349, "Apple TV Plus": 350, "AMC on Demand": 352, wavve: 356, DocPlay: 357, "Mediaset Infinity": 359, "NPO Start": 360, TCM: 361, TNT: 363, IndieFlix: 368, "VOD Club": 370, Go3: 373, "Canal+": 381, "TV 2": 383, "HBO Max": 384, BINGE: 385, "Peacock Premium": 386, "Peacock Premium Plus": 387, Sooner: 389, wedotv: 392, FlixOlé: 393, TVNZ: 395, Film1: 396, "BBC America": 397, VVVVID: 414, "Animation Digital Network": 415, "Here TV": 417, "Joyn Plus": 421, Blockbuster: 423, "HBO Go": 425, "SF Anytime": 426, CONtv: 428, HiDive: 430, "TV 2 Play": 431, "Flix Premiere": 432, OVID: 433, OzFlix: 434, "Draken Films": 435, "Fetch TV": 436, "Hungama Play": 437, "Chai Flicks": 438, "Shout! Factory TV": 439, ThreeNow: 440, NFB: 441, "NRK TV": 442, Filmstriben: 443, Dekkoo: 444, Classix: 445, Retrocrush: 446, "Belas Artes à La Carte": 447, Beamafilm: 448, "Global TV": 449, Picl: 451, RTPplay: 452, "Night Flight Plus": 455, "Mitele ": 456, "VIX ": 457, "RTBF Auvio": 461, Kirjastokino: 463, Kocowa: 464, Believe: 465, "Bioskop Online": 466, "DIRECTV GO": 467, genflix: 468, "Club Illico": 469, NLZIET: 472, Revry: 473, ShemarooMe: 474, DOCSVILLE: 475, "EPIC ON": 476, "GOSPEL PLAY": 477, "History Play": 478, "Home of Horror": 479, Filmtastic: 480, ArthouseCNMA: 481, ManoramaMax: 482, "MAX Stream": 483, "Claro tv+": 484, "Spectrum On Demand": 486, tvo: 488, Vidio: 489, CINE: 491, SVT: 493, Cineasterna: 496, "Tele2 Play": 497, Oldflix: 499, "Tata Play": 502, "Hi-YAH": 503, Player: 505, TBS: 506, "tru TV": 507, DisneyNOW: 508, "Discovery+": 524, iWantTFC: 511, TNTGo: 512, Shadowz: 513, AsianCrush: 514, "MX Player": 515, Noovo: 516, "TriArt Play": 517, Spamflix: 521, Popcorntimes: 522, "Knowledge Network": 525, "AMC+": 526, "AMC+ Amazon Channel": 528, ARROW: 529, "Paramount Plus": 531, aha: 532, "Amazon Arthaus Channel": 533, Argo: 534, "Dogwoof On Demand": 536, ZDF: 537, Plex: 538, Viddla: 539, "Elisa Viihde": 540, rtve: 541, filmfriend: 542, CONTAR: 543, Libreflix: 544, Spuul: 545, "WOW Presents Plus": 546, "IFFR Unleashed": 548, IPLA: 549, Tenk: 550, "Magellan TV": 551, "QFT Player": 552, "Telia Play": 553, BroadwayHD: 554, tvzavr: 556, "More TV": 557, Filmzie: 559, Filmoteket: 560, "Lionsgate Play": 561, MovieSaints: 562, KPN: 563, "Filme Filme": 566, "True Story": 567, "DocAlliance Films": 569, Premier: 570, "RTL Play": 572, KinoPop: 573, KoreaOnDemand: 575, "Klik Film": 576, TvIgle: 577, Strim: 578, "Film Movement Plus": 579, "Nova Play": 580, iQIYI: 581, "Paramount+ Amazon Channel": 582, "Epix Amazon Channel": 583, "Discovery+ Amazon Channel": 584, Metrograph: 585, "IFC Amazon Channel": 587, "MGM Amazon Channel": 588, "TELETOON+ Amazon Channel": 589, "Now TV Cinema": 591, "STV Player": 593, "Eros Now Amazon Channel": 595, "Arrow Video Amazon Channel": 596, "Full Moon Amazon Channel": 597, "Pokémon Amazon Channel": 599, "Shout! Factory Amazon Channel": 600, "FilmBox Live Amazon Channel": 602, "CuriosityStream Amazon Channel": 603, "DocuBay Amazon Channel": 604, "Super Channel Amazon Channel": 605, "StackTV Amazon Channel": 606, "OUTtv Amazon Channel": 607, "Love Nature Amazon Channel": 608, "Smithsonian Channel Amazon Channel": 609, "BBC Earth Amazon Channel": 610, "ALLWAYSBLK Amazon Channel": 612, Freevee: 613, "VI movies and tv": 614, W4free: 615, Paus: 618, DRTV: 620, "Dansk Filmskat": 621, "UPC TV": 622, WeTV: 623, KKTV: 624, "LINE TV": 625, Otta: 626, Voyo: 627, Edisonline: 628, OSN: 629, STARZPLAY: 630, HRTi: 631, "Paramount+ Roku Premium Channel": 633, "Starz Roku Premium Channel": 634, "AMC+ Roku Premium Channel": 635, "MGM Plus Roku Premium Channel": 636, "Pickbox NOW": 637, "Public Domain Movies": 638, CineMember: 639, "Nexo Plus": 641, "STUDIOCANAL PRESENTS Apple TV Channel": 642, "Showtime Apple TV Channel": 675, Eventive: 677, "Filmlegenden Amazon Channel": 678, "Cinema of Hearts Amazon Channel": 679, "Bloody Movies Amazon Channel": 680, "Film Total Amazon Channel": 681, "Looke Amazon Channel": 683, "FlixOlé Amazon Channel": 684, "OCS Amazon Channel ": 685, "Home of Horror Amazon Channel": 686, "Arthouse CNMA Amazon Channel": 687, "ShortsTV Amazon Channel": 688, "TVCortos Amazon Channel": 689, "Pongalo Amazon Channel ": 690, "Play Suisse": 691, Cultpix: 692, "Turk On Video Amazon Channel": 693, Serially: 696, meJane: 697, "FilmBox+": 701, iBAKATV: 702, IROKOTV: 704, "Hollywood Suite Amazon Channel": 705, "Moviedome Plus Amazon Channel": 706, "Aniverse Amazon Channel": 707, "Superfresh Amazon Channel": 708, "Comedy Central Plus Amazon Channel": 1706, "BluTV Amazon Channel": 1707, "GRJNGO Amazon Channel": 1709, "MTV Plus Amazon Channel": 1711, "RTL Passion Amazon Channel": 1712, "Silverline Amazon Channel": 1713, "Shahid VIP": 1715, "Acontra Plus": 1717, "AVA VOBB": 1722, "AVA HBZ": 1723, "AVA CSAL": 1724, "AVA BGB": 1725, "Infinity Selection Amazon Channel": 1726, "CG Collection Amazon channel": 1727, "iWonder Full Amazon channel": 1728, "Full Action Amazon Channel": 1729, "Cine Comico Amazon Channel": 1730, "Universcine Amazon Channel": 1732, "Action Max Amazon Channel": 1733, "Filmo Amazon Channel": 1734, "Insomnia Amazon Channel": 1735, "Shadowz Amazon Channel": 1736, "INA madelen Amazon Channel": 1737, "Benshi Amazon Channel": 1738, "Planet Horror Amazon Channel": 1740, "Dizi Amazon Channel": 1741, "Acontra Plus Amazon Channel": 1742, "Historia y Actualidad Amazon Channel": 1743, "Icon Film Amazon Channel": 1744, "Curzon Amazon Channel": 1745, "Hallmark TV Amazon Channel": 1746, "Studiocanal Presents Amazon Channel": 1747, TOD: 1750, "TF1+": 1754, filmingo: 1756, "Sooner Amazon Channel": 1757, "Bet+": 1759, "Yorck on Demand": 1764, "Paramount+ with Showtime": 1770, Takflix: 1771, SkyShowtime: 1773, "Love and Passion Amazon Channel": 1788, Klassiki: 1793, "Starz Amazon Channel": 1794, "Netflix basic with Ads": 1796, "Studiocanal Presents MOVIECULT Amazon Channel": 1805, "Studiocanal Presents ALLSTARS Amazon Channel": 1806, "Cohen Media Amazon Channel": 1811, "Max Amazon Channel": 1825, "TOD TV": 1826, "Behind the Tree": 1829, Popflick: 1832, Tivify: 1838, "Britbox Apple TV Channel ": 1852, "Paramount Plus Apple TV Channel ": 1853, "AMC Plus Apple TV Channel ": 1854, "Starz Apple TV Channel": 1855, "Magenta TV": 1856, Telenet: 1857, "Univer Video": 1860, Filmow: 1861, "UAM TV": 1862, "ViX Premium Amazon Channel": 1866, Runtime: 1875, "BrutX Amazon Channel": 1887, "Animation Digital Network Amazon Channel": 1888, "Universal+ Amazon Channel": 1889, "alleskino Amazon Channel": 1891, "RTL Crime Amazon Channel": 1892, "CineAutore Amazon Channel": 1894, "Anime Generation Amazon Channel": 1895, "Raro Video Amazon Channel": 1896, "MIDNIGHT FACTORY Amazon Channel": 1897, "Amazon miniTV": 1898, Max: 1899, "ARD Plus": 1902, "TV+": 1904, Apollo: 1912, "Reserva Imovision": 1920, Kinobox: 1927, "Prima Plus": 1928, "Filmtastic bei Canal+": 1929, "Lepsi TV": 1939, "TV4 Play": 1944, Reveel: 1948, "Angel Studios": 1956, Cineverse: 1957, "AD tv": 1958, "Midnight Pulp": 1960, Allente: 1961, "Xumo Play": 1963, "National Geographic": 1964, "Molotov TV": 1967, "Crunchyroll Amazon Channel": 1968, DistroTV: 1971, myfilmfriend: 1972, Filmicca: 1973, "Outside Watch": 1976, "NPO Plus": 1986, Brollie: 1988, "ZDF Select Amazon Channel ": 1989, GlewedTV: 1990, Videoload: 1993, "TELE 5": 1994, "MTV Katsomo": 2029, "A&E Crime Central Apple TV Channel": 2033, "Acorn TV Apple TV": 2034, "ALLBLK Apple TV channel": 2036, "ARD Plus Apple TV channel": 2037, "Arthaus+ Apple TV channel": 2038, "BET+ Apple TV channel": 2040, "BFI Player Apple TV Channel": 2041, "Carnegie Hall+ Apple TV Channel": 2042, "OUTtv Apple TV Channel": 2044, "UP Faith & Family Apple TV Channel": 2045, "Topic Apple TV Channel": 2046, "Sundance Now Apple TV Channel": 2048, "Shudder Apple TV Channel": 2049, "ScreenPix Apple TV Channel": 2050, "Love Nature Apple TV Channel": 2052, "Lionsgate Play Apple TV Channel": 2053, "Lifetime Play Apple TV Channel": 2054, "Lifetime Movie Club Apple TV Channel": 2055, "IFC Films Unlimited Apple TV Channel": 2056, "HISTORY Vault Apple TV Channel": 2057, "Hallmark Movies Now Apple TV Channel": 2058, "Eros Now Select Apple TV Channel": 2059, "CuriosityStream Apple TV Channel": 2060, "Cinemax Apple TV Channel": 2061, "ALLBLK Amazon channel ": 2064, "Carnegie Hall+ Amazon Channel": 2071, "HISTORY Vault Amazon Channel": 2073, "Lionsgate Play Amazon Channel": 2074, "Lifetime Play Amazon Channel": 2075, "Wedo TV": 2076, "Plex Channel": 2077, "Troma NOW": 2078, KiKA: 2081, "Lifetime Movie Club Amazon Channel": 2089, "Amazon Prime Video with Ads": 2100, "Canal+ Premium": 2101, "Premiery Canal+": 2102, "Adrenalina Pura Amazon channel": 2106, "Adrenalina Pura Apple TV channel": 2107, "Far East Amazon Channel ": 2108, Cinu: 2115, BYUtv: 2129, "AXN Black Amazon Channel": 2134, "Kino Film Collection": 2135, "Arthaus+": 2137, "MGM Plus Amazon Channel": 2141, "MGM+ Apple TV Channel": 2142, "CG tv": 2149, "ORF ON": 2151, "ORF KIDS": 2152, "Telecine Amazon Channel": 2156, "Reserva Imovision Amazon Channel": 2157, "Stingray Amazon Channel": 2158, "CurtaOn Amazon Channel": 2159, "Sony One Amazon Channel": 2161, "Atresplayer Amazon Channel": 2162, "Vix Gratis Amazon Channel": 2163, "Gaia Amazon Channel": 2164, "Cindie Amazon Channel": 2167, "DocPlay Amazon Channel": 2168, "Iwonder Amazon Channel": 2169, "Rialto Amazon Channel": 2170, "Anime Digital Network Amazon Channel": 2173, "Strand Releasing Amazon Channel": 2174, "Hoichoi Amazon Channel": 2176, "ManoramaMAX Amazon Channel": 2177, "Chaupal Amazon Channel": 2178, "BBC Kids Amazon Channel": 2179, "Sony Pictures Amazon Channel": 2180, "Vrott Amazon Channel": 2181, "Anime Times Amazon Channel": 2182, "MyZen TV Amazon Channel": 2183, "Museum Tv Amazon Channel": 2184, "NammaFlix Amazon Channel": 2185, Toggo: 2201, Kixi: 2206, Verleihshop: 2207, "Freenet meinVOD": 2209, "3sat": 2211, };
 //------------------------------------Fonctions------------------------------------//
 //ici type est le type de contenu (film ou serie) et id est l'identifiant du contenu
 //TMDB ne permet pas de faire une recherche film et serie en meme temps , l'url est donc differente pour chaque type
@@ -30,96 +42,103 @@ async function getProviderDetails(type, id) {
   const data = await response.json();
   return data.results?.FR?.flatrate || [];
 }
-//exemple console log contiendra un tableau  d objet avec logopath providerId ProviderName et un display priority
-//meme si on a un memo de provider il en existe enormemnt et cette fonction permet d'obtenir dans les resultats toute les plateformes
-//Si le film est disponible sur amazon et HBO on aura pas d'erreur pour HBO mais au contraire son nom et son ID
-//flatrate est un tableau contenant les plateformes de streaming sur lesquelles le contenu est disponible
-//TMDB differencie avec des methodes comme l'achat de film ou la location 
-//On essaye d'obtenir la propriété flatrate de l'objet fr (pour la france) , si elle n'existe pas on retourne un tableau vide 
-//ce qui evite les erreurs de type type error et ne bloquera pas les logiques de map , filter ... 
-// Fonction pour rechercher du contenu (film et serie) par plateforme de streaming , region (langue !== region)et limite d'items
-async function rechercheContenuParPlateforme(plateformes, region = 'FR',  limite = 50) {
+
+async function fetchPaginatedData(url, limite) {
+  let results = [];
+  let page = 1;
+  let totalPages = 0;
+
+  while (results.length < limite) {
+    const response = await fetch(`${url}&page=${page}`);
+    const data = await response.json();
+    
+    results = results.concat(data.results);
+    totalPages = data.total_pages;
+
+    if (data.results.length === 0 || results.length >= limite || page >= totalPages) {
+      break;
+    }
+
+    page++;
+  }
+
+  return { results: results.slice(0, limite), totalPages, pagesFetched: page };
+}
+
+async function rechercheContenuParPlateforme(plateformes, region = 'FR', limite = 100) {
   console.log('Received plateformes in function:', plateformes);
   console.log('PROVIDER_IDS:', PROVIDER_IDS);
+
   if (!plateformes || (Array.isArray(plateformes) && plateformes.length === 0)) {
     return { error: "Aucune plateforme sélectionnée", plateformes: plateformes };
   }
+
   try {
     const plateformesIds = plateformes
-    .map(p => {
-      const platformName = typeof p === 'string' ? p.toLowerCase() : p;
-      const id = Object.entries(PROVIDER_IDS).find(([key, value]) => key.toLowerCase() === platformName)?.[1];
-      console.log(`Converting platform ${p} to ID: ${id}`);
-      return id;
-    })
-    .filter(id => id !== undefined);
+      .map(p => {
+        const platformName = typeof p === 'string' ? p.toLowerCase() : p;
+        const id = Object.entries(PROVIDER_IDS).find(([key, value]) => key.toLowerCase() === platformName)?.[1];
+        console.log(`Converting platform ${p} to ID: ${id}`);
+        return id;
+      })
+      .filter(id => id !== undefined);
 
     if (plateformesIds.length === 0) {
       return "Aucune plateforme valide sélectionnée.";
     }
-    //TMDB permet de chainer les plateformes de streaming avec un pipe pour OR et une virgule pour AND
-    // le but n'étant pas de trouver un film disponible sur l'ensemble des plateformes , mais l'ensemble des films
-    // disponibles sur les plateformes selectionnées
-    const providerIdString = plateformesIds.join('|');
 
-    const discoverUrls = ['movie', 'tv'].map(type => 
+    const providerIdString = plateformesIds.join('|');
+    const discoverUrls = ['movie', 'tv'].map(type =>
       `${BASE_URL}/discover/${type}?api_key=${API_KEY}&language=fr-FR&sort_by=popularity.desc&include_adult=false&include_video=false&with_watch_providers=${providerIdString}&watch_region=${region}`
     );
-    //on fait une requete pour chaque type de contenu (film et serie) , on trie par popularité et on inclut les plateformes de streaming
-    const contentData = await Promise.all(
-      discoverUrls.map(url => fetch(url).then(res => res.json()))
-    );
-    //une fois que l'on a confirmé les ID des plateforme de streaming, on peut les utiliser pour faire une recherche de contenu
-    
-    let contenu = [];
-    //contenu est un tableau vide sur lequel nous ajouteront film/serie et qui nous permettra de limiter le nombre de contenu fetcher
-    for (let i = 0; i < contentData.length; i++) {
-      //on boucle sur le tableau de contenu pour chaque type de contenu (film et serie) 
-      const type = i === 0 ? 'movie' : 'tv';
-      //si i est 0 on est sur un film , sinon une serie , c'est necessaire pour  chercher film ou serie avec TMDB
-      //'https://api.themoviedb.org/3/discover/tv?' ou 'https://api.themoviedb.org/3/discover/movie?'
-      for (const item of contentData[i].results) {
-        if (contenu.length >= limite) break;
 
-        const providers = await getProviderDetails(type, item.id);
-        //on recupere les plateformes de streaming sur lesquelles le contenu est disponible pour l'ajouter plus bas dans plateformes
+    const contentDataPromises = discoverUrls.map(url => fetchPaginatedData(url, limite / 2));
+    const contentData = await Promise.all(contentDataPromises);
+
+    const contenu = [];
+    let totalPagesFetched = 0;
+    let totalPages = 0;
+
+    for (let i = 0; i < contentData.length; i++) {
+      const type = i === 0 ? 'movie' : 'tv';
+      const { results, totalPages: tp, pagesFetched } = contentData[i];
+      
+      totalPagesFetched += pagesFetched;
+      totalPages += tp;
+
+      const providerPromises = results.map(item => getProviderDetails(type, item.id));
+      const providerResults = await Promise.all(providerPromises);
+
+      for (let j = 0; j < results.length; j++) {
+        const item = results[j];
+        const providers = providerResults[j];
+
         contenu.push({
           type: i === 0 ? 'film' : 'série',
-          //maintenant on specifie juste le type pour notre objet
           titre: item.title || item.name,
-          //souvent une serie a un name et un movie un title , dans tout les cas il y'a soit l'un soit l'autre
           annee: new Date(item.release_date || item.first_air_date).getFullYear(),
-          //pareil date de sortie pour les films ou air date pour les series
           description: item.overview,
-          poster : item.poster_path,
+          poster: item.poster_path,
           popularite: item.vote_average,
-          vote : item.vote_count,
+          vote: item.vote_count,
           plateformes: providers.map(p => ({
             id: p.provider_id,
             nom: p.provider_name
-            //et c'est la avec getProviderDetails que l'on obtient le nom et l'id de toute les plateformes disposant de ce film/serie
           }))
         });
       }
-      if (contenu.length >= limite) break;
     }
 
     contenu.sort((a, b) => b.popularite - a.popularite);
-    //a ce stade notre tableau contenu est bien rempli, on le trie juste en terme de popularité
-    //le resultat de b.popularite - a.popularite , si il est negatif , b est place avant a , si il est positif a est place avant b
-    //si il est nul , l'ordre reste le meme
-    //exemple the boys a 8.5 de popularite et flash 7.7 , le resultat est -0,8 donc the boys sera place avant flash
-    
 
     return {
-      contenu: contenu,
+      contenu: contenu.slice(0, limite),
       totalItems: contenu.length,
       itemsPerPage: limite,
-      plateformesUtilisees : plateformesIds,
-      plateformesUtiliseesNoms : plateformes.map(p => typeof p === 'string' ? p : Object.keys(PROVIDER_IDS).find(key => PROVIDER_IDS[key] === p)),
-      //contenu : ce qui est retourné par les promesses
-      //totalItems : le nombre total de contenu
-      //itemsperpage : limite fixé dans le fetch
+      plateformesUtilisees: plateformesIds,
+      plateformesUtiliseesNoms: plateformes.map(p => typeof p === 'string' ? p : Object.keys(PROVIDER_IDS).find(key => PROVIDER_IDS[key] === p)),
+      totalPagesFetched,
+      totalPages
     };
 
   } catch (error) {
@@ -127,6 +146,9 @@ async function rechercheContenuParPlateforme(plateformes, region = 'FR',  limite
     return "Une erreur est survenue lors de la recherche.";
   }
 }
+
+
+
 
 
 
@@ -333,7 +355,7 @@ router.get('/recherche/:plateformes/:region/:limite', (req, res) => {
 router.get('/trendings', async (req, res) => {
   console.log('raw platformes:', req.query.plateformes);
   try {
-    const { plateformes, region = 'FR', limite = 50 } = req.query;
+    const { plateformes, region = 'FR', limite = 100 } = req.query;
     console.log('Received query params:', { plateformes, region, limite });
 
     // Vérifiez si 'plateformes' est défini
