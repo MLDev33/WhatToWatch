@@ -70,7 +70,7 @@ async function getProviderDetails(type, id) {
     return { providers: [], link: '' };
   }
 }
-
+//flatrate est juste le nom d'une propriete de l'objet data.results.FR qui contient les plateformes de streaming sur lesquelles le contenu est disponible
 //fetchPaginatedData permet de recuperer les donnees paginees de l'API TMDB afin d'obtenir plus de resultats
 async function fetchPaginatedData(url, limite) {
   let results = [];
