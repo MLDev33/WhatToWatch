@@ -65,6 +65,7 @@ async function getProviderDetails(type, id) {
     const providers = data.results?.FR?.flatrate || [];
     const link = data.results?.FR?.link || '';
     const logo = data.results?.FR?.logo_path || '';
+    console.log(`Providers for ${type} with ID ${id}:`, providers);
     return { providers, link };
   } catch (error) {
     console.error(`Error fetching provider details for ${type} with ID ${id}:`, error);
