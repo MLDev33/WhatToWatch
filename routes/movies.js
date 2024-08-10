@@ -64,8 +64,6 @@ async function getProviderDetails(type, id) {
     const data = await response.json();
     const providers = data.results?.FR?.flatrate || [];
     const link = data.results?.FR?.link || '';
-    const logo = data.results?.FR?.logo_path || '';
-    console.log(`Providers for ${type} with ID ${id}:`, providers);
     return { providers, link };
   } catch (error) {
     console.error(`Error fetching provider details for ${type} with ID ${id}:`, error);
@@ -101,8 +99,8 @@ async function fetchPaginatedData(url, limite) {
 //platformName est mis en minuscule pour eviter les erreurs de casse
 //id est l'identifiant de la plateforme de streaming 
 async function rechercheContenuParPlateforme(plateformes, region = 'FR', limite = 100) {
-  console.log('Received plateformes in function:', plateformes);
-  console.log('PROVIDER_IDS:', PROVIDER_IDS);
+  //console.log('Received plateformes in function:', plateformes);
+  //console.log('PROVIDER_IDS:', PROVIDER_IDS);
 
   if (!plateformes || (Array.isArray(plateformes) && plateformes.length === 0)) {
     return { error: "Aucune plateforme sélectionnée", plateformes: plateformes };
@@ -113,7 +111,7 @@ async function rechercheContenuParPlateforme(plateformes, region = 'FR', limite 
       .map(p => {
         const platformName = typeof p === 'string' ? p.toLowerCase() : p;
         const id = Object.entries(PROVIDER_IDS).find(([key, value]) => key.toLowerCase() === platformName)?.[1];
-        console.log(`Converting platform ${p} to ID: ${id}`);
+        //console.log(`Converting platform ${p} to ID: ${id}`);
         return id;
       })
       .filter(id => id !== undefined);
@@ -148,7 +146,7 @@ async function rechercheContenuParPlateforme(plateformes, region = 'FR', limite 
 
       for (let j = 0; j < results.length; j++) {
         const item = results[j];
-        const { providers, link } = providerResults[j];
+        const { providers, link  } = providerResults[j];
         if (!idsSet.has(item.id)) { // Vérifier si l'ID est déjà dans l'ensemble
           idsSet.add(item.id); // Ajouter l'ID à l'ensemble
           //si l'ID n'est pas dans l'ensemble , on ajoute l'element au contenu  , si il est deja present on ne l'ajoute pas
@@ -158,21 +156,22 @@ async function rechercheContenuParPlateforme(plateformes, region = 'FR', limite 
             titre: item.title || item.name,
             annee: new Date(item.release_date || item.first_air_date).getFullYear(),
             description: item.overview,
-            genre : item.genre_ids.map(id => type  === 'movie' ? MOVIE_GENRE_NAMES[id] : TV_GENRE_NAMES[id]),
+            genre : item.genre_ids.map(id => type === 'movie' ? MOVIE_GENRE_NAMES[id] : TV_GENRE_NAMES[id]),
             poster: item.poster_path,
             popularite: item.vote_average,
             vote: item.vote_count,
-            id : item.id, // selon TMDB il faudra faire une recherche avec l'id pour obtenir l'URL
+            id : item.id,
             plateformes: providers.map(p => ({
               id: p.provider_id,
-              nom: p.provider_name
+              nom: p.provider_name,
+              logo: p.logo_path // Utilisez directement le logo_path du fournisseur
             })),
             lien: link,
-            logo: item.logo_path
           });
         }
       }
     }
+
 
     contenu.sort((a, b) => b.popularite - a.popularite);
 
@@ -238,7 +237,7 @@ router.get('/trendings', async (req, res) => {
 
     const result = await rechercheContenuParPlateforme(plateformeArray, region, parseInt(limite));
     res.status(200).json({ success: true, result });
-    console.log('Result:', result);
+    //console.log('Result:', result);
   } catch (error) {
     console.error('Error occurred:', error);
     res.status(500).json({ success: false, message: error.message });
@@ -261,25 +260,25 @@ router.get('/search', async (req, res) => {
       const { providers, link } = await getProviderDetails(type, item.id);
 
       return {
-        type: type === 'movie' ? 'film' : 'série',
-        titre: item.title || item.name,
-        annee: new Date(item.release_date || item.first_air_date).getFullYear(),
-        description: item.overview,
-        genre: item.genre_ids ? item.genre_ids.map(id => type === 'movie' ? MOVIE_GENRE_NAMES[id] : TV_GENRE_NAMES[id]) : [],
-        poster: item.poster_path,
-        id: item.id,
-        popularite: item.vote_average,
-        vote: item.vote_count,
-        plateformes: providers.map(p => ({
-          id: p.provider_id,
-          nom: p.provider_name
-        })),
-        lien: link,
-        logo: item.logo_path
-
-      };
+  type: type === 'movie' ? 'film' : 'série',
+  titre: item.title || item.name,
+  annee: new Date(item.release_date || item.first_air_date).getFullYear(),
+  description: item.overview,
+  genre: item.genre_ids ? item.genre_ids.map(id => type === 'movie' ? MOVIE_GENRE_NAMES[id] : TV_GENRE_NAMES[id]) : [],
+  poster: item.poster_path,
+  id: item.id,
+  popularite: item.vote_average,
+  vote: item.vote_count,
+  plateformes: providers.map(p => ({
+    id: p.provider_id,
+    nom: p.provider_name,
+    logo: p.logo_path
+  })),
+  lien: link,
+};
     }));
-    console.log('Search results:', results);
+    //console.log('Search results:', results);
+    console.log('Search results:', JSON.stringify(results, null, 2));
     res.status(200).json({ success: true, results });
   } catch (error) {
     console.error('Error occurred:', error);
