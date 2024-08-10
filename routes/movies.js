@@ -64,6 +64,7 @@ async function getProviderDetails(type, id) {
     const data = await response.json();
     const providers = data.results?.FR?.flatrate || [];
     const link = data.results?.FR?.link || '';
+    const logo = data.results?.FR?.logo_path || '';
     return { providers, link };
   } catch (error) {
     console.error(`Error fetching provider details for ${type} with ID ${id}:`, error);
@@ -165,7 +166,8 @@ async function rechercheContenuParPlateforme(plateformes, region = 'FR', limite 
               id: p.provider_id,
               nom: p.provider_name
             })),
-            lien: link
+            lien: link,
+            logo: item.logo_path
           });
         }
       }
@@ -271,7 +273,9 @@ router.get('/search', async (req, res) => {
           id: p.provider_id,
           nom: p.provider_name
         })),
-        lien: link
+        lien: link,
+        logo: item.logo_path
+
       };
     }));
     console.log('Search results:', results);
