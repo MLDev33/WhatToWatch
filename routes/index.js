@@ -7,7 +7,7 @@ router.get('/', function(req, res, next) {
 });
 
 router.get('/test', function(req, res, next) {
-  res.json({ result : true , message: 'Hello World' });
+  res.json({ success: true });
 
 });
 
