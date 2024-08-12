@@ -62,7 +62,22 @@ async function getProviderDetails(type, id) {
   try {
     const response = await fetch(url);
     const data = await response.json();
+    //data contient results , avec une clé langue et une clé flatrate : {FR : {link : '', flatrate : []}}
+    //exemple de reponse pour friends ():
+    /*
+ "link": "https://www.themoviedb.org/tv/1668-friends/watch?locale=FR",
+      "flatrate": [
+        {
+          "logo_path": "/fksCUZ9QDWZMUwL2LgMtLckROUN.jpg",
+          "provider_id": 1899,
+          "provider_name": "Max",
+          "display_priority": 29
+        }
+      ]
+    */
+   //on recupere les plateformes de streaming sur lesquelles le contenu est disponible
     const providers = data.results?.FR?.flatrate || [];
+    //on recupere le lien pour regarder le contenu
     const link = data.results?.FR?.link || '';
     return { providers, link };
   } catch (error) {
@@ -70,27 +85,30 @@ async function getProviderDetails(type, id) {
     return { providers: [], link: '' };
   }
 }
-//flatrate est juste le nom d'une propriete de l'objet data.results.FR qui contient les plateformes de streaming sur lesquelles le contenu est disponible
+
 //fetchPaginatedData permet de recuperer les donnees paginees de l'API TMDB afin d'obtenir plus de resultats
 async function fetchPaginatedData(url, limite) {
   let results = [];
   let page = 1;
   let totalPages = 0;
-
+//limite est une valeur donnée dans la requete , elle permet de limiter le nombre de resultats
   while (results.length < limite) {
     const response = await fetch(`${url}&page=${page}`);
     const data = await response.json();
     
+    //on concatene les resultats de chaque page
     results = results.concat(data.results);
     totalPages = data.total_pages;
 
+    //si il n'y a plus de resultats ou si on a atteint la limite ou si on a atteint le nombre total de pages , on arrete
     if (data.results.length === 0 || results.length >= limite || page >= totalPages) {
       break;
     }
-
+    //sinon on incremente la page
     page++;
   }
 
+  //on retourne le resulat avec un slice de la limite pour ne pas depasser le nombre de resultats , on retourne aussi le nombre total de pages et le nombre de
   return { results: results.slice(0, limite), totalPages, pagesFetched: page };
 }
 
@@ -101,7 +119,8 @@ async function fetchPaginatedData(url, limite) {
 async function rechercheContenuParPlateforme(plateformes, region = 'FR', limite = 100) {
   //console.log('Received plateformes in function:', plateformes);
   //console.log('PROVIDER_IDS:', PROVIDER_IDS);
-
+  // plateformes est un tableau , si il est vide on retourne un message d'erreur
+  //plateformes est un tableau car , on peut avoir plusieurs plateformes de streaming selectionnees, cela permet de faciliter la recherche de contenu 
   if (!plateformes || (Array.isArray(plateformes) && plateformes.length === 0)) {
     return { error: "Aucune plateforme sélectionnée", plateformes: plateformes };
   }
@@ -111,22 +130,29 @@ async function rechercheContenuParPlateforme(plateformes, region = 'FR', limite 
       .map(p => {
         const platformName = typeof p === 'string' ? p.toLowerCase() : p;
         const id = Object.entries(PROVIDER_IDS).find(([key, value]) => key.toLowerCase() === platformName)?.[1];
+        // ce code cherche dans l'objet PROVIDER_IDS une paire clé-valeur où la clé correspond au nom de la plateforme (platformName). Si une telle paire est trouvée, elle retourne la valeur associée à cette clé. Sinon, elle retourne undefined.
         //console.log(`Converting platform ${p} to ID: ${id}`);
         return id;
       })
       .filter(id => id !== undefined);
-
+    //on filtre les id pour ne pas avoir de undefined
+    // si aucune plateforme n'est valide , on retourne un message d'erreur
     if (plateformesIds.length === 0) {
       return "Aucune plateforme valide sélectionnée.";
     }
-
+    // on join avec une pipe pour obtenir une chaine de caractere dans l'url ( on peut chainer avec , ou | les id des plateformes en requete)
+    //Documentation TMDB  doit utiliser with_watch_providers avec with_watch_region , can be a comma (AND) or pipe (OR) separated query
     const providerIdString = plateformesIds.join('|');
     const discoverUrls = ['movie', 'tv'].map(type =>
       `${BASE_URL}/discover/${type}?api_key=${API_KEY}&language=fr-FR&sort_by=popularity.desc&include_adult=false&include_video=false&with_watch_providers=${providerIdString}&watch_region=${region}`
     );
+    //on recupere les urls pour les films et les series , limite / 2 car on a deux types de contenu (film et serie) cela renvoi un tableau de deux urls
 
     const contentDataPromises = discoverUrls.map(url => fetchPaginatedData(url, limite / 2));
+    
+    // contentData est un tableau de deux objets , chaque objet contient les resultats , le nombre total de pages et le nombre de pages fetchées
     const contentData = await Promise.all(contentDataPromises);
+
     // fetchPaginatedData renvoie un objet avec les resultats, le nombre total de pages et le nombre de pages fetchées , limite est divise par 2 car on a deux types de contenu (film et serie)
     const contenu = [];
     const idsSet = new Set(); // Ensemble pour stocker les IDs des éléments ajoutés
@@ -134,8 +160,13 @@ async function rechercheContenuParPlateforme(plateformes, region = 'FR', limite 
     let totalPagesFetched = 0;
     let totalPages = 0;
 
+    //on parcourt les resultats de chaque type de contenu (film et serie)
+
     for (let i = 0; i < contentData.length; i++) {
+      //on rappelle que contentData est un tableau de deux objets , un pour objet film et un pour objet serie
       const type = i === 0 ? 'movie' : 'tv';
+      //sur le premier tour de boucle , i traite l'objet contenant les films , sur le deuxieme tour de boucle , i traite l'objet contenant les series
+      //l'ordre est simplement car on a mis les films en premier dans le tableau discoverUrls
       const { results, totalPages: tp, pagesFetched } = contentData[i];
       
       totalPagesFetched += pagesFetched;
@@ -143,9 +174,11 @@ async function rechercheContenuParPlateforme(plateformes, region = 'FR', limite 
 
       const providerPromises = results.map(item => getProviderDetails(type, item.id));
       const providerResults = await Promise.all(providerPromises);
-
+      //dans chaque element maintenant
       for (let j = 0; j < results.length; j++) {
+        //on recupere les resultats et les plateformes de streaming sur lesquelles le contenu est disponible
         const item = results[j];
+        //on recupere les plateformes de streaming sur lesquelles le contenu est disponible
         const { providers, link  } = providerResults[j];
         if (!idsSet.has(item.id)) { // Vérifier si l'ID est déjà dans l'ensemble
           idsSet.add(item.id); // Ajouter l'ID à l'ensemble
@@ -172,9 +205,11 @@ async function rechercheContenuParPlateforme(plateformes, region = 'FR', limite 
       }
     }
 
-
+    //on trie le contenu par popularite
     contenu.sort((a, b) => b.popularite - a.popularite);
-
+    //on retourne un contenu avec un slice de la limite pour ne pas depasser le nombre de resultats , on retourne aussi le nombre total de pages et le nombre de pages fetchées
+    //si il y'a eu des doublons , le nombre de resultats peut etre inferieur a la limite (environ 94 resultats au lieu de 100)
+    
     return {
       contenu: contenu.slice(0, limite),
       totalItems: contenu.length,
@@ -210,22 +245,27 @@ soient termines avant de continuer
 
 
 //route pour fetch des media  au lancement de Home
-
+//route en get
 router.get('/trendings', async (req, res) => {
+
   console.log('raw platformes:', req.query.plateformes);
+  //raw platformes: ["netflix","disney+"]
   try {
     const { plateformes, region = 'FR', limite = 100 } = req.query;
     console.log('Received query params:', { plateformes, region, limite });
+    //Received query params: { plateformes: '["netflix","disney+"]', region: 'FR', limite: '100' }
 
+    //region et limite sont optionnels , je ne pense pas que l'on utilisera dans le code , pour le moment le front prend des valeurs par default dans la route (&region=FR&limite=100`;) , plateformes est obligatoire
     // Vérifiez si 'plateformes' est défini
     if (!plateformes) {
       throw new Error("Le paramètre 'plateformes' est requis");
     }
-
+ 
     let plateformeArray;
     try {
       plateformeArray = JSON.parse(plateformes);
       console.log('Parsed plateformeArray:', plateformeArray);
+      //Parsed plateformeArray: [ 'netflix', 'disney+' ]
     } catch (error) {
       throw new Error("Erreur de parsing JSON pour 'plateformes'");
     }
@@ -234,7 +274,7 @@ router.get('/trendings', async (req, res) => {
     if (!Array.isArray(plateformeArray)) {
       throw new Error("'plateformes' doit être un tableau");
     }
-
+    //quand on recupere limite il est en chaine de caractere , on le parse en entier (voir plus haut Received query params)
     const result = await rechercheContenuParPlateforme(plateformeArray, region, parseInt(limite));
     res.status(200).json({ success: true, result });
     //console.log('Result:', result);
@@ -248,6 +288,7 @@ router.get('/trendings', async (req, res) => {
 // https://api.themoviedb.org/3/search/multi?query=Matrix&include_adult=false&language=fr-FR&page=1';
 
 router.get('/search', async (req, res) => {
+  //query prend la chaine de caractere du front , include_adult prend la valeur false par default , language prend la valeur fr-FR par default , page prend la valeur 1 par default
   const { query, include_adult = false, language = 'fr-FR', page = 1 } = req.query;
   const url = `${BASE_URL}/search/multi?api_key=${API_KEY}&query=${query}&include_adult=${include_adult}&language=${language}&page=${page}`;
 
