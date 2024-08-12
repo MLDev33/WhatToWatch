@@ -6,16 +6,16 @@ const userSchema = mongoose.Schema({
     email: String,
     password: String,
     avatar: String,
-    created_list: { type: mongoose.Schema.Types.ObjectId, ref: 'movielists'},
-    invited_list: { type: mongoose.Schema.Types.ObjectId, ref: 'movielists'},
-    liked_movies: { type: mongoose.Schema.Types.ObjectId, ref: 'media'},
-    watched_movies: { type: mongoose.Schema.Types.ObjectId, ref: 'media'},
-    watchlist: {
-        movie_id: {type: mongoose.Schema.Types.ObjectId, ref: 'media'},
+    created_list: { type: mongoose.Schema.Types.ObjectId, ref: 'MovieList' },
+    invited_list: { type: mongoose.Schema.Types.ObjectId, ref: 'MovieList' },
+    liked_movies: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Media' }],
+    watched_movies: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Media' }],
+    watchlist: [{
+        movie_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Media' },
         scheduled_time: Date
-    }
+    }]
 });
 
-const User = mongoose.model('users', userSchema);
+const User = mongoose.model('User', userSchema);
 
 module.exports = User;
