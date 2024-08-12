@@ -13,17 +13,25 @@ router.get('/', function(req, res, next) {
 });
 
 router.post('/signup', (req, res) => {
-
   if (!checkBody(req.body, ['username', 'email', 'password'])) {
     res.json({ result: false, error: 'Missing or empty fields' });
     return;
   }
-
-  // Check if the user has not already been registered
-  User.findOne({ username: req.body.username }).then(data => {
-    if (data === null) {
+  // Vérifier si le nom d'utilisateur existe déjà
+  User.findOne({ username: req.body.username }).then(userByUsername => {
+    if (userByUsername !== null) {
+      res.json({ result: false, error: 'Username already exists' });
+      return;
+    }
+    // Vérifier si l'email existe déjà
+    User.findOne({ email: req.body.email }).then(userByEmail => {
+      if (userByEmail !== null) {
+        res.json({ result: false, error: 'Email already exists' });
+        return;
+      }
+      // Si le nom d'utilisateur et l'email n'existent pas, créer un nouvel utilisateur
       const hash = bcrypt.hashSync(req.body.password, 10);
-
+      
       const newUser = new User({
         token: uid2(32),
         username: req.body.username,
@@ -34,10 +42,7 @@ router.post('/signup', (req, res) => {
       newUser.save().then(newDoc => {
         res.json({ result: true, token: newDoc.token, username: newDoc.username });
       });
-    } else {
-      // User already exists in database
-      res.json({ result: false, error: 'User already exists' });
-    }
+    });
   });
 });
 
