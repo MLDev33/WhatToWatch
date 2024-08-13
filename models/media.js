@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const mediaSchema = mongoose.Schema({
     tmdbId: { type: Number, required: true, unique: true },
-    mediaType: { type: String, enum: ['movie', 'tv'], required: true },
+    mediaType: { type: String, enum: ['film', 'série'], required: true },
     title: String,
     poster: String,
     adult: Boolean,

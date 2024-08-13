@@ -188,7 +188,7 @@ async function rechercheContenuParPlateforme(plateformes, region = 'FR', limite 
           //si l'ID n'est pas dans l'ensemble , on ajoute l'element au contenu  , si il est deja present on ne l'ajoute pas
           //cette gestion des doublons elimine des resultats de recherche sur les 100 de la route , on peut avoir 94 resultats par exemple
           contenu.push({
-            type: i === 0 ? 'movie' : 'série',
+            type: i === 0 ? 'film' : 'série',
             titre: item.title || item.name,
             annee: new Date(item.release_date || item.first_air_date).getFullYear(),
             description: item.overview,
@@ -397,6 +397,7 @@ router.post('/like', async (req, res) => {
 
     res.status(200).json({ success: true, message: "Média ajouté aux favoris", media: media });
   } catch (error) {
+    console.error("Erreur serveur:", error); 
     res.status(500).json({ success: false, message: "Erreur serveur", error: error.message });
   }
 });
@@ -409,7 +410,7 @@ Vérifie l'utilisateur à partir de son token.
 Récupère les médias aimés par l'utilisateur.
 Retourne les médias aimés avec la date à laquelle ils ont été aimés.
 */
-router.get('/user-likes ', async (req, res) => {
+router.get('/user-likes', async (req, res) => {
   const { userToken } = req.query;
 
   try {
