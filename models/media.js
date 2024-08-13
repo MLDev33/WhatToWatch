@@ -1,7 +1,8 @@
 const mongoose = require('mongoose');
 
 const mediaSchema = mongoose.Schema({
-    mediaType: String,
+    tmdbId: { type: Number, required: true, unique: true },
+    mediaType: { type: String, enum: ['movie', 'tv'], required: true },
     title: String,
     poster: String,
     adult: Boolean,
@@ -9,9 +10,15 @@ const mediaSchema = mongoose.Schema({
     release_date: Date,
     description: String,
     popularity: Number,
-    vote_count: Number,
-    streaming_platform: Array,
-});
+    vote_count: Number, 
+    providers: [{
+        providerId: Number,
+        providerName: String,
+        logoPath: String
+      }],
+    link: String
+  });
+
 
 const Media = mongoose.model('Media', mediaSchema);
 

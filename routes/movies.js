@@ -5,6 +5,9 @@ var express = require('express');
 var router = express.Router();
 // Importation du module node-fetch pour effectuer des requêtes HTTP
 const fetch = require('node-fetch');
+const User = require('../models/users');
+const Media = require('../models/media');
+const MovieList = require('../models/movielists');
 
 const API_KEY = process.env.API_KEY;
 const BASE_URL = 'https://api.themoviedb.org/3';
@@ -327,6 +330,112 @@ router.get('/search', async (req, res) => {
   }
 });
 
+//----------------Route Like----------------//
+/*
+Route POST /like :
+
+Vérifie l'utilisateur à partir de son token.
+Vérifie si le média existe déjà dans la collection Media, sinon le crée.
+Ajoute le média aux films aimés de l'utilisateur.
+Si un listToken est fourni, ajoute le média à la liste correspondante.
+Sauvegarde les modifications de l'utilisateur et de la liste de films (si applicable).
+*/
+//route pour ajouter un film / serie a la liste des favoris de l'utilisateur , et , si l'item est dans une liste , à la liste 
+
+router.post('/like', async (req, res) => {
+  //obligatoire : userToken , mediaDetails, facultatif : listToken
+  const { userToken , mediaDetails , listToken } = req.body;
+  //on verifie l'utilisateur
+  try {
+    const user = await User.findOne({ token: userToken });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "Utilisateur non trouvé" });
+    }
+    //on verifie si media existe déjà dans la collection Media
+    let media = await Media.findOne({ id: mediaDetails.id });
+    if (!media) {
+      //si pas de media , on le cree
+      media = new Media(mediaDetails);
+      await media.save();
+      console.log('Media created:', media);
+    } else {
+      //si media existe deja , on le met a jour (ce n'est peut etre pas interessant mais c'est une fonctionnalité qui est possible)
+      console.log('Media already exists:', media);
+      Object.assign(media, mediaDetails);
+      await media.save()
+    }
+    if (user.liked_movies.includes(media._id)) {
+      return res.status(400).json({ success: false, message: "Média déjà dans les favoris" });
+    }
+    user.liked_movies.push(media._id);
+    //on verifie si listToken existe , si oui on ajoute le media a la liste
+    let movieList;
+    if (listToken) {
+      movieList = await MovieList.findOne({ token: listToken });
+      if (movieList) {
+        const likeEntry = {
+          movie_id: media._id,
+          liked_by: user._id,
+          liked_by_all: false,
+          watched_by: [],
+          scheduled_time: null,
+          notification_sent: false
+        };
+        movieList.movie_liked.push(likeEntry);
+        if (!movieList.movies.includes(media._id)) {
+          movieList.movies.push(media._id);
+        }
+      }
+    }
+
+    // Utilisation de Promise.all pour effectuer les sauvegardes en parallèle
+    await Promise.all([
+      user.save(),
+      //si movieList existe on le sauvegarde , si non on sauvegarde uniquement l'utilisateur
+      movieList ? movieList.save() : Promise.resolve()
+    ]);
+
+    res.status(200).json({ success: true, message: "Média ajouté aux favoris", media: media });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Erreur serveur", error: error.message });
+  }
+});
+
+//----------route pour voir les films et series likes par l'utilisateur----------//
+/*
+Route GET /user-likes :
+
+Vérifie l'utilisateur à partir de son token.
+Récupère les médias aimés par l'utilisateur.
+Retourne les médias aimés avec la date à laquelle ils ont été aimés.
+*/
+router.get('/user-likes ', async (req, res) => {
+  const { userToken } = req.query;
+
+  try {
+    const user = await User.findOne({ token: userToken });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "Utilisateur non trouvé" });
+    }
+
+  const likedMedia = await Media.find({ _id: { $in: user.liked_movies } })
+  .select('-__v') // Exclut le champ de versionnement Mongoose
+  .lean(); // Convertit les documents Mongoose en objets JS simples pour une meilleure performance
+ 
+  const likedMediaWithDates = likedMedia.map(media => ({
+    ...media,
+    likedAt: user.liked_movies.find(id => id.equals(media._id))?.likedAt || new Date()
+  }));
+
+  res.status(200).json({ 
+    success: true, 
+    likedMedia: likedMediaWithDates,
+    totalLikes: likedMediaWithDates.length
+  });
+} catch (error) {
+  res.status(500).json({ success: false, message: "Erreur serveur", error: error.message });
+}
+});
 
 
 
