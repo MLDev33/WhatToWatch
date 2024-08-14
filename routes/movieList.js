@@ -22,24 +22,35 @@ const BASE_URL = 'https://api.themoviedb.org/3';
     //ELEMENTS DE QUERY TMDB:
     // Mode de recherche 
         // -> " /discover "
+        const searchWay = "/discover";
 
     // Type movie ou serie
         // -> " /movie? " ou " /tv? "
+        const type = "/movie?";
     
     // Inclure les media pour adults true ou false
         // -> " include_adult=false "
+        const isAdulte = "include_adult=false";
 
     // Inclure les vidéos true ou false
         // -> " &include_video=false "
+        const isVideo = "&include_video=false";
 
     // Lanquage demander
         // -> " &language=fr-FR "
+        const language= "&language=fr-FR";
 
-    // Pagination
+    // Pagination (de 1 à 100)
         // -> " &page=1 "
+        const page = "&page=1";
 
-    // Année de réalisation 
+    // Année de réalisation (???? pb lors des recherche revoir ce critére)
         // -> " &primary_release_year=2020 "
+        // ou
+        // -> "&release_date.lte=2022-01-01 "
+        // ou 
+        // -> "&release_date.gte=2022-01-01 "
+        const releaseDateGte = "&release_date.gte=2022-01-01 ";
 
     // Region
         // -> " &region=France "
@@ -50,19 +61,59 @@ const BASE_URL = 'https://api.themoviedb.org/3';
         // -> titre original croissant " &sort_by=original_title.asc "
         // ou
         // -> moyenne des votes " &sort_by=vote_average.asc "
+        const sortBy = "&sort_by=vote_average.asc"
 
     // Note moyenne minimum
-        // -> " &vote_average.lte=7 "
+        // -> " &vote_average.gte=7 "
+        const average = "&vote_average.gte=4";
 
     // Genre
-        // -> " &with_genres=horreur "
+        // -> " &with_genres=28 "
+        const genre = "&with_genres=28";
 
-    
+    // Streaming platform
+        // -> " &with_watch_providers=Netflix, Amazone prime video "
+        const provider = "&with_watch_providers=Netflix, Amazone prime video";
 
-/* GET movie list. */
-router.get('/', function(req, res) {
-  res.render('index', { title: 'Express' });
-});
+    router.get('/moviesList', (req, res) => {
+    //Query from TMDB -> `https://api.themoviedb.org/3/discoverer/movie?include_adult=true&include_video=false&language=en-EN&page=2&sort_by=popularity.desc&vote_average.gte=4&with_genres=28&with_watch_providers=Netflix, Amazone prime video&year`
+        const urlModulable = `${BASE_URL}${searchWay}${type}${isAdulte}${isVideo}${language}${page}${sortBy}${average}${genre}${provider}`
+        fetch(urlModulable)
+            .then(response => response.json())
+            .then(data => {
+                res.json({result: data})
+                console.log(data)
+            });
+    });
+
+
+
+
+
+
+
+
+
+
+
+
+
+// let movieList = [
+//     {   token: "ffbfdbd",
+//         listName: "Test création d'une liste", 
+//         creator: "Objet avec IdUser",
+//         member: "Array objet aec IdUser",
+//         option:{
+//             contentType: ["Movie", "TV"],
+//             genre: ["horreur", "action"],
+//             streamingPlatform: ["Netflix", "Amazon prime video"],
+//             rataing: 3,
+//             avatard: "image",
+//         },
+//         media: ["Object Id movie1", "Object Id movie2",]
+//     }
+//]
+
 
 //////////////////////////////////
 //Brouillon
