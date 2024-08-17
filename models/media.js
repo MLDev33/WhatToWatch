@@ -1,21 +1,24 @@
 const mongoose = require('mongoose');
 
 const mediaSchema = mongoose.Schema({
-
-    mediaType: String, // enum: ["movie", "series"] (requiere: true)
+    tmdbId: { type: Number, required: true, unique: true },
+    mediaType: { type: String, enum: ['film', 'série'], required: true },
     title: String,
     poster: String,
     adult: Boolean,
-    genre: array[String],
-    year: Number,
+    genre: Array,
+    release_date: Date,
     description: String,
     popularity: Number,
-    vote_count: Number,
-    streaming_platforms: {
-        streaming_platform_id: ObjectId,
-        streaming_platform_name: String,
-    }
-});
+    vote_count: Number, 
+    providers: [{
+        providerId: Number,
+        providerName: String,
+        logoPath: String
+      }],
+    link: String
+  });
+
 
 const Media = mongoose.model('medias', mediaSchema);
 

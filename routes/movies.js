@@ -249,6 +249,7 @@ router.get('/trendings', async (req, res) => {
 
 router.get('/search', async (req, res) => {
   const { query, include_adult = false, language = 'fr-FR', page = 1 } = req.query;
+  console.log("QUERY:", req.query);
   const url = `${BASE_URL}/search/multi?api_key=${API_KEY}&query=${query}&include_adult=${include_adult}&language=${language}&page=${page}`;
 
   try {
