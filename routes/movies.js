@@ -187,10 +187,15 @@ async function rechercheContenuParPlateforme(plateformes, region = 'FR', limite 
           idsSet.add(item.id); // Ajouter l'ID à l'ensemble
           //si l'ID n'est pas dans l'ensemble , on ajoute l'element au contenu  , si il est deja present on ne l'ajoute pas
           //cette gestion des doublons elimine des resultats de recherche sur les 100 de la route , on peut avoir 94 resultats par exemple
+          
+          const releaseDate = new Date(item.release_date || item.first_air_date);
+          const annee = releaseDate.getFullYear();
+          const mois = releaseDate.getMonth() + 1; // Les mois sont indexés à partir de 0
+          const jour = releaseDate.getDate();
           contenu.push({
             type: i === 0 ? 'film' : 'série',
             titre: item.title || item.name,
-            annee: new Date(item.release_date || item.first_air_date).getFullYear(),
+            annee: `${annee}-${mois.toString().padStart(2, '0')}-${jour.toString().padStart(2, '0')}`, // Format YYYY-MM-DD
             description: item.overview,
             genre : item.genre_ids.map(id => type === 'movie' ? MOVIE_GENRE_NAMES[id] : TV_GENRE_NAMES[id]),
             poster: item.poster_path,
@@ -302,11 +307,14 @@ router.get('/search', async (req, res) => {
     const results = await Promise.all(data.results.map(async item => {
       const type = item.media_type === 'movie' ? 'movie' : 'tv';
       const { providers, link } = await getProviderDetails(type, item.id);
-
+      const releaseDate = new Date(item.release_date || item.first_air_date);
+      const annee = releaseDate.getFullYear();
+      const mois = releaseDate.getMonth() + 1; // Les mois sont indexés à partir de 0
+      const jour = releaseDate.getDate();
       return {
   type: type === 'movie' ? 'film' : 'série',
   titre: item.title || item.name,
-  annee: new Date(item.release_date || item.first_air_date).getFullYear(),
+  annee: `${annee}-${mois.toString().padStart(2, '0')}-${jour.toString().padStart(2, '0')}`, // Format YYYY-MM-DD
   description: item.overview,
   genre: item.genre_ids ? item.genre_ids.map(id => type === 'movie' ? MOVIE_GENRE_NAMES[id] : TV_GENRE_NAMES[id]) : [],
   poster: item.poster_path,
@@ -343,35 +351,34 @@ Sauvegarde les modifications de l'utilisateur et de la liste de films (si applic
 //route pour ajouter un film / serie a la liste des favoris de l'utilisateur , et , si l'item est dans une liste , à la liste 
 
 router.post('/like', async (req, res) => {
-  //obligatoire : userToken , mediaDetails, facultatif : listToken
-  const { userToken , mediaDetails , listToken } = req.body;
-  //on verifie l'utilisateur
+  const { userToken, mediaDetails, listToken } = req.body;
+
   try {
+    // Vérification de l'utilisateur
     const user = await User.findOne({ token: userToken });
     if (!user) {
       return res.status(404).json({ success: false, message: "Utilisateur non trouvé" });
     }
-    //on verifie si media existe déjà dans la collection Media
-    let media = await Media.findOne({ id: mediaDetails.id });
+
+    // Vérification si le média existe déjà dans la collection Media
+    let media = await Media.findOne({ tmdbId: mediaDetails.tmdbId });
     if (!media) {
-      //si pas de media , on le cree
+      // Si pas de média, on le crée
       media = new Media(mediaDetails);
       await media.save();
-      console.log('Media created:', media);
-    } else {
-      //si media existe deja , on le met a jour (ce n'est peut etre pas interessant mais c'est une fonctionnalité qui est possible)
-      console.log('Media already exists:', media);
-      Object.assign(media, mediaDetails);
-      await media.save()
     }
-    if (user.liked_movies.includes(media._id)) {
+
+    // Vérification si le média est déjà dans les favoris de l'utilisateur
+    if (user.liked_movies.some(likedMedia => likedMedia.equals(media._id))) {
       return res.status(400).json({ success: false, message: "Média déjà dans les favoris" });
     }
+
+    // Ajout du média aux favoris de l'utilisateur
     user.liked_movies.push(media._id);
-    //on verifie si listToken existe , si oui on ajoute le media a la liste
-    let movieList;
+
+    // Vérification si listToken existe, si oui on ajoute le média à la liste
     if (listToken) {
-      movieList = await MovieList.findOne({ token: listToken });
+      const movieList = await MovieList.findOne({ token: listToken });
       if (movieList) {
         const likeEntry = {
           movie_id: media._id,
@@ -385,23 +392,17 @@ router.post('/like', async (req, res) => {
         if (!movieList.movies.includes(media._id)) {
           movieList.movies.push(media._id);
         }
+        await movieList.save();
       }
     }
 
-    // Utilisation de Promise.all pour effectuer les sauvegardes en parallèle
-    await Promise.all([
-      user.save(),
-      //si movieList existe on le sauvegarde , si non on sauvegarde uniquement l'utilisateur
-      movieList ? movieList.save() : Promise.resolve()
-    ]);
+    await user.save();
 
     res.status(200).json({ success: true, message: "Média ajouté aux favoris", media: media });
   } catch (error) {
-    console.error("Erreur serveur:", error); 
     res.status(500).json({ success: false, message: "Erreur serveur", error: error.message });
   }
 });
-
 //----------route pour voir les films et series likes par l'utilisateur----------//
 /*
 Route GET /user-likes :
@@ -414,31 +415,25 @@ router.get('/user-likes', async (req, res) => {
   const { userToken } = req.query;
 
   try {
-    const user = await User.findOne({ token: userToken });
+    const user = await User.findOne({ token: userToken }).populate('liked_movies');
     if (!user) {
       return res.status(404).json({ success: false, message: "Utilisateur non trouvé" });
     }
 
-  const likedMedia = await Media.find({ _id: { $in: user.liked_movies } })
-  .select('-__v') // Exclut le champ de versionnement Mongoose
-  .lean(); // Convertit les documents Mongoose en objets JS simples pour une meilleure performance
- 
-  const likedMediaWithDates = likedMedia.map(media => ({
-    ...media,
-    likedAt: user.liked_movies.find(id => id.equals(media._id))?.likedAt || new Date()
-  }));
+    const likedMedia = user.liked_movies.map(media => ({
+      ...media.toObject(),
+      likedAt: media.likedAt || new Date()
+    }));
 
-  res.status(200).json({ 
-    success: true, 
-    likedMedia: likedMediaWithDates,
-    totalLikes: likedMediaWithDates.length
-  });
-} catch (error) {
-  res.status(500).json({ success: false, message: "Erreur serveur", error: error.message });
-}
+    res.status(200).json({ 
+      success: true, 
+      likedMedia,
+      totalLikes: likedMedia.length
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Erreur serveur", error: error.message });
+  }
 });
-
-
 
 //------------------------------------EXPERIMENTAL------------------------------------//
 //essai de faire une route entierement modulable selon les options donnes en params depuis le front
