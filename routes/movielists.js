@@ -1,23 +1,138 @@
 const express = require('express');
 const router = express.Router();
 const fetch = require('node-fetch');
+const Movielists = require('../models/movielists')
 
-const API_KEY = process.env.API_KEY;
-const BASE_URL = 'https://api.themoviedb.org/3';
+
+router.get('/get/:token', (req, res) => {
+    Movielists.find({ token: req.params.token }).then(data => {
+        if (data) {
+          res.json({ result: true, data: data});
+        } else {
+          res.json({ result: false, error: 'Medialists not found' });
+        }
+    });
+  })
+
+
+  router.post('/add/:token', (req, res) => {
+
+    if (!checkBody(req.body, ['list_name', 'types'])) {
+        res.json({ result: false, error: 'Missing or empty fields' });
+        return;
+      }
+    
+      // Vérifie que le nom de liste n'existe pas déjà
+  Movielists.findOne({ list_name: req.body.name }).then(data => {
+    if (data === null) {
+
+      const newMovieList = new MovieList({
+        token: req.params.token,
+        username: req.body.username,
+        email: req.body.email,
+        list_name: req.body.list_name,
+        creator: { ref: 'User'},
+        members: [{ref: 'User' }],
+        options: [
+            {
+                content_type: req.body.types,
+                genre: req.body.genres,
+                streaming_platform: req.body.providers,
+            }
+        ],
+        movies: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Media' }], // Mettre le résulta du fectch de la list selon les critères.
+        movie_liked: [{
+            movie_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Media' },
+            liked_by: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+            liked_by_all: Boolean,
+            watched_by: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+            scheduled_time: Date,
+            notification_sent: Boolean,
+        }],
+        avatar: String,
+      });
+
+      newUser.save().then(newDoc => {
+        res.json({ result: true, token: newDoc.token, username: newDoc.username });
+      });
+    } else {
+      // User already exists in database
+      res.json({ result: false, error: 'User already exists' });
+    }
+  });
+  })
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+//////////// ELEMENTS DE BROUILLON CI-DESSOUS A SUPPRIMER A LA FIN /////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
 
 let test = ["Movie1", "Movie2"];
 
 //Paramètres de la liste définie dans la page liste de l'application
-    // 1 - Movie ou serie
-    // 2 - Genre
-    // 3 - Minimum rating
-    // 4 - Streaming platforms
-    // 5 - Release date
+    // 1 - Name
+    // 2 - Type: Movie ou serie
+    // 3 - Genre
+    // 4 - Minimum rating
+    // 5 - Streaming platforms
+    // 6 - Release date
 
 function getListParameters() {
     console.log("test")
     return "test"
 };
+
     //Elements query de THDB entre guillemets ci-dessous 
     //(propriété avant le "="= variable à paramétre après le "=")
     //( pour les multichoix utiliser dans la query TMDB 
@@ -106,8 +221,11 @@ function getListParameters() {
     router.get('/add', async (req, res) => {
         //res.json({result: "test route /add/list acces ok"})
         //Liste des paramètres de la route
-        const { 
-            types, 
+        //let types = ["Movie"];
+
+        let {
+            types,
+            genres,
             isAdult, 
             isVideo, 
             language, 
@@ -116,17 +234,37 @@ function getListParameters() {
             releaseDateLte, 
             sortBy, 
             average, 
-            genres,
             providers
         } = req.body
-        console.log("req.params:", req.params)
 
+        console.log("req.body:", req.body)
+        console.log("types", types)
 
-        // const typesMap = types.map((element) => {
+        // const idGenresMap = types.map((element) => {
+        //     //Extraire les id de la list des genres
+        //     const genreMovieSet = new Set();
+        //     genres.map((dataGenre) => {
+        //         genreMovieSet.add(dataGenre.id)
+        //     })
+        //     console.log("genreMovieSet view:", genreMovieSet )
+
         //     //Route pour définir les url selon le type de média Movie ou Serie
-        //     if(req.params.types.toLower.includes("movie")){
-        //         consoel.log("route movie way ok")
+        //     if(element.toLowerCase() === "movie"){
+        //         let type = element;
+        //         console.log("route movie way ok");
+        //         const urlMovie = `https://api.themoviedb.org/3/discover/${types}?include_adult=${isAdult}&include_video=${isVideo}&language=${language}&page=${Number.parseInt(page)}&release_date.gte=${releaseDateGte.toString()}&release_date.lte=${releaseDateLte.toString()}&sort_by=${sortBy}&vote_average.gte=${average}&with_genres=${getGenresByType(types)}&with_watch_providers=${providers}&api_key=${API_KEY}`;
+                
+        //         fetch(urlMovie)
+        //         .then(response => response.json())
+        //         .then(data => {
+        //             res.json({result: data});
+        //             console.log(data);
+        //             console.log(typeof page);
+        //             responseMovie = data;
+        //         });
         //     }
+
+        //     console.log("response", reponseMovie)
         // })
 
 
@@ -134,23 +272,23 @@ function getListParameters() {
 
 
 
-    //Query from TMDB -> `https://api.themoviedb.org/3/discover/movie?include_adult=true&include_video=false&language=fr-FR&page=1&release_date.gte=2022-01-01&sort_by=vote_average.asc&vote_average.gte=4&with_genres=28&with_watch_providers=Netflix,Amazone prime video`
-        //const urlModulable = `https://api.themoviedb.org/3/discover/movie?include_adult=true&include_video=false&language=fr-FR&page=1&release_date.gte=2022-01-01&sort_by=popularity.as&vote_average.gte=4&with_genres=28&with_watch_providers=Netflix,%20Amazone%20prime%20video&api_key=${API_KEY}`
-        //const urlModulable = `${BASE_URL}${searchWay}${type}${isAdult}${isVideo}${language}${page}${sortBy}${average}${genre}${provider}&api_key=${API_KEY}`
-        //const urlModulable = `${BASE_URL}/discover/${types}?include_adult=${isAdult}&include_video=${isVideo}&language=${language}&page=${page}&release_date.gte=${releaseDateGte}&sort_by=${sortBy}&vote_average.gte=${average}&with_genres=${genres}&with_watch_providers=${provider}&api_key=${API_KEY}`
-        //const urlModulable = `${BASE_URL}/discover/${types}?include_adult=${isAdult}&include_video=${isVideo}&language=${language}&page=${page}&release_date.gte=${releaseDateGte}&sort_by=${sortBy}&vote_average.gte=${average}&with_genres=${genres}&with_watch_providers=${providers}&api_key=${API_KEY}`
-        //const {seachWay, type, isAdult, isVideo, language, page, sortBy, average, genre, provider, key} = req.params;
-        //const urlModulable = `${BASE_URL}/${searchWay}/${type}&api_key=${API_KEY}`
-        
-        const urlModulable = `https://api.themoviedb.org/3/discover/${types}?include_adult=${isAdult}&include_video=${isVideo}&language=${language}&page=${Number.parseInt(page)}&release_date.gte=${releaseDateGte.toString()}&release_date.lte=${releaseDateLte.toString()}&sort_by=${sortBy}&vote_average.gte=${average}&with_genres=${genres}&with_watch_providers=${providers}&api_key=${API_KEY}`
+        //Query from TMDB -> `https://api.themoviedb.org/3/discover/movie?include_adult=true&include_video=false&language=fr-FR&page=1&release_date.gte=2022-01-01&sort_by=vote_average.asc&vote_average.gte=4&with_genres=28&with_watch_providers=Netflix,Amazone prime video`
+            //const urlModulable = `https://api.themoviedb.org/3/discover/movie?include_adult=true&include_video=false&language=fr-FR&page=1&release_date.gte=2022-01-01&sort_by=popularity.as&vote_average.gte=4&with_genres=28&with_watch_providers=Netflix,%20Amazone%20prime%20video&api_key=${API_KEY}`
+            //const urlModulable = `${BASE_URL}${searchWay}${type}${isAdult}${isVideo}${language}${page}${sortBy}${average}${genre}${provider}&api_key=${API_KEY}`
+            //const urlModulable = `${BASE_URL}/discover/${types}?include_adult=${isAdult}&include_video=${isVideo}&language=${language}&page=${page}&release_date.gte=${releaseDateGte}&sort_by=${sortBy}&vote_average.gte=${average}&with_genres=${genres}&with_watch_providers=${provider}&api_key=${API_KEY}`
+            //const urlModulable = `${BASE_URL}/discover/${types}?include_adult=${isAdult}&include_video=${isVideo}&language=${language}&page=${page}&release_date.gte=${releaseDateGte}&sort_by=${sortBy}&vote_average.gte=${average}&with_genres=${genres}&with_watch_providers=${providers}&api_key=${API_KEY}`
+            //const {seachWay, type, isAdult, isVideo, language, page, sortBy, average, genre, provider, key} = req.params;
+            //const urlModulable = `${BASE_URL}/${searchWay}/${type}&api_key=${API_KEY}`
+            
+            const urlModulable = `https://api.themoviedb.org/3/discover/${types}?include_adult=${isAdult}&include_video=${isVideo}&language=${language}&page=${Number.parseInt(page)}&release_date.gte=${releaseDateGte.toString()}&release_date.lte=${releaseDateLte.toString()}&sort_by=${sortBy}&vote_average.gte=${average}&with_genres=${getIdGenresByTypes(types)}&with_watch_providers=${providers}&api_key=${API_KEY}`
 
-        fetch(urlModulable)
-            .then(response => response.json())
-            .then(data => {
-                res.json({result: data})
-                console.log(data)
-                console.log(typeof page)
-            });
+            fetch(urlModulable)
+                .then(response => response.json())
+                .then(data => {
+                    res.json({result: data})
+                    console.log(data)
+                    console.log(typeof page)
+                });
     });
 
     ///:seachWay/:type/:isAdult/:isVideo/:language/:page/:sortBy/:average/:genre/:provider/:key
