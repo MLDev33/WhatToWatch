@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const fetch = require('node-fetch');
 const Movielists = require('../models/movielists')
-
+const User = require('../models/users')
+const { checkBody } = require('../modules/checkBody');
 
 router.get('/get/:token', (req, res) => {
     Movielists.find({ token: req.params.token }).then(data => {
@@ -16,50 +17,64 @@ router.get('/get/:token', (req, res) => {
 
 
   router.post('/add/:token', (req, res) => {
+        //console.log(req.body.friends)
+    // if (!checkBody(req.body, ['list_name', 'types'])) {
+    //     res.json({ result: false, error: 'Missing or empty fields' });
+    //     return;
+    //   }
 
-    if (!checkBody(req.body, ['list_name', 'types'])) {
-        res.json({ result: false, error: 'Missing or empty fields' });
-        return;
-      }
+
+      //cherhcher l'iD de l'utilisateur
+    //   let userId = User.findOne({token: (req.params.token).toString()})
+    //     .then((data) => {res.json({ObjectIdUser: data.id})})
+
+    let friends = req.body.friends
+        (friends).then((data) => {res.json({friends: data})}, console.log(data))
+
+    //   let friendId = (req.body.friends).map((friend) => {
+    //     User.findOne({token : (req.body.friends).toString()})
+    //         .then((data) => {res.json({members: data})},
+    //         console.log("data:", data))
+     // }) // rajouter condition si vide
     
       // Vérifie que le nom de liste n'existe pas déjà
-  Movielists.findOne({ list_name: req.body.name }).then(data => {
-    if (data === null) {
+//   Movielists.findOne({ list_name: req.body.name }).then(data => {
+//     if (data === null) {
 
-      const newMovieList = new MovieList({
-        token: req.params.token,
-        username: req.body.username,
-        email: req.body.email,
-        list_name: req.body.list_name,
-        creator: { ref: 'User'},
-        members: [{ref: 'User' }],
-        options: [
-            {
-                content_type: req.body.types,
-                genre: req.body.genres,
-                streaming_platform: req.body.providers,
-            }
-        ],
-        movies: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Media' }], // Mettre le résulta du fectch de la list selon les critères.
-        movie_liked: [{
-            movie_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Media' },
-            liked_by: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-            liked_by_all: Boolean,
-            watched_by: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-            scheduled_time: Date,
-            notification_sent: Boolean,
-        }],
-        avatar: String,
-      });
+//       const newMovieList = new MovieList({
+//         token: req.params.token,
+//         username: req.body.username,
+//         email: req.body.email,
+//         list_name: req.body.list_name,
+//         creator: { ref: userId }, // Vérifier si c'est la bonne méthode pour ajouter
+//         members: friendId,
+//         options: [
+//             {
+//                 content_type: req.body.types,
+//                 genre: req.body.genres,
+//                 streaming_platform: req.body.providers,
+//             }
+//         ],
+//         movies: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Media' }], // Mettre le résulta du fectch de la list selon les critères.
+//         movie_liked: [{
+//             movie_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Media' },
+//             liked_by: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+//             liked_by_all: Boolean,
+//             watched_by: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+//             scheduled_time: Date,
+//             notification_sent: Boolean,
+//         }],
+//         avatar: req.body.avatar,
+//       });
 
-      newUser.save().then(newDoc => {
-        res.json({ result: true, token: newDoc.token, username: newDoc.username });
-      });
-    } else {
-      // User already exists in database
-      res.json({ result: false, error: 'User already exists' });
-    }
-  });
+//       newUser.save().then(newDoc => {
+        //res.json({ result: true, test: userId });
+    //   });
+    // } else {
+    //   // User already exists in database
+    //   res.json({ result: false, error: 'User already exists' });
+    // }
+//   });
   })
 
 

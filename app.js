@@ -9,7 +9,6 @@ require('./models/connection');
 require('./models/users');
 require('./models/media');
 require('./models/movielists');
-require('./models/genres');
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
