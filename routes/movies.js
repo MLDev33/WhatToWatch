@@ -8,7 +8,7 @@ const fetch = require('node-fetch');
 const User = require('../models/users');
 const Media = require('../models/media');
 const MovieList = require('../models/movielists');
-
+const moment = require('moment');
 const API_KEY = process.env.API_KEY;
 const BASE_URL = 'https://api.themoviedb.org/3';
 
@@ -188,14 +188,12 @@ async function rechercheContenuParPlateforme(plateformes, region = 'FR', limite 
           //si l'ID n'est pas dans l'ensemble , on ajoute l'element au contenu  , si il est deja present on ne l'ajoute pas
           //cette gestion des doublons elimine des resultats de recherche sur les 100 de la route , on peut avoir 94 resultats par exemple
           
-          const releaseDate = new Date(item.release_date || item.first_air_date);
-          const annee = releaseDate.getFullYear();
-          const mois = releaseDate.getMonth() + 1; // Les mois sont indexés à partir de 0
-          const jour = releaseDate.getDate();
+          const releaseDate = moment(item.release_date || item.first_air_date).format('YYYY-MM-DD');
+
           contenu.push({
             type: i === 0 ? 'film' : 'série',
             titre: item.title || item.name,
-            annee: `${annee}-${mois.toString().padStart(2, '0')}-${jour.toString().padStart(2, '0')}`, // Format YYYY-MM-DD
+            annee: releaseDate, // Date formatée au format YYYY-MM-DD
             description: item.overview,
             genre : item.genre_ids.map(id => type === 'movie' ? MOVIE_GENRE_NAMES[id] : TV_GENRE_NAMES[id]),
             poster: item.poster_path,
@@ -307,14 +305,12 @@ router.get('/search', async (req, res) => {
     const results = await Promise.all(data.results.map(async item => {
       const type = item.media_type === 'movie' ? 'movie' : 'tv';
       const { providers, link } = await getProviderDetails(type, item.id);
-      const releaseDate = new Date(item.release_date || item.first_air_date);
-      const annee = releaseDate.getFullYear();
-      const mois = releaseDate.getMonth() + 1; // Les mois sont indexés à partir de 0
-      const jour = releaseDate.getDate();
+      const releaseDate = moment(item.release_date || item.first_air_date).format('YYYY-MM-DD');
+
       return {
   type: type === 'movie' ? 'film' : 'série',
   titre: item.title || item.name,
-  annee: `${annee}-${mois.toString().padStart(2, '0')}-${jour.toString().padStart(2, '0')}`, // Format YYYY-MM-DD
+  annee: releaseDate, // Date formatée au format YYYY-MM-DD
   description: item.overview,
   genre: item.genre_ids ? item.genre_ids.map(id => type === 'movie' ? MOVIE_GENRE_NAMES[id] : TV_GENRE_NAMES[id]) : [],
   poster: item.poster_path,
