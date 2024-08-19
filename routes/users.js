@@ -62,4 +62,22 @@ router.post('/signin', (req, res) => {
   });
 });
 
+
+router.delete("/:token", (req, res) => {
+  User.deleteOne({
+    token: req.params.token,
+  }).then(deletedDoc =>{
+      if (deletedDoc.deletedCount > 0) {
+      User.find().then(data => {
+        res.json({ result: true, token: data.token });
+      })
+    } else {
+      res.json({ result: false, error: "User not found" });
+    }
+  }
+    
+  );
+});
+
+
 module.exports = router;
