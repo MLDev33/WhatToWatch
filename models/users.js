@@ -5,6 +5,7 @@ const userSchema = mongoose.Schema({
     username: String,
     email: String,
     password: String,
+    favouritePlatforms: [String],
     avatar: String,
     created_list: { type: mongoose.Schema.Types.ObjectId, ref: 'MovieList' },
     invited_list: { type: mongoose.Schema.Types.ObjectId, ref: 'MovieList' },
