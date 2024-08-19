@@ -4,7 +4,12 @@ const fetch = require('node-fetch');
 const Movielists = require('../models/movielists')
 const User = require('../models/users')
 const { checkBody } = require('../modules/checkBody');
+const { getIdGenresByType } = require('../modules/IdGenresByType.js')
 
+const API_KEY = process.env.API_KEY;
+const BASE_URL = 'https://api.themoviedb.org/3';
+
+// Route pour consulter les lists déjà existante de l'utilisateur
 router.get('/get/:token', (req, res) => {
     Movielists.find({ token: req.params.token }).then(data => {
         if (data) {
@@ -15,8 +20,49 @@ router.get('/get/:token', (req, res) => {
     });
   })
 
+// Route qui propose des media à l'utilisateur selon les critères de sa liste
+//Paramètres de la liste définie dans la page liste de l'application
+    // 1 - Name
+    // 2 - Type: Movie ou serie
+    // 3 - Genres
+    // 4 - Minimum rating
+    // 5 - Streaming platforms
+    // 6 - Release date Gte
+    // 7 - Release date Lte
+router.post('/add', (req,res) => {
 
-  router.post('/add/:token', (req, res) => {
+    //let types = ['Movie'];
+
+    let {
+        types,
+        genres,
+        isAdult, 
+        isVideo, 
+        language, 
+        page,
+        releaseDateGte, 
+        releaseDateLte, 
+        sortBy, 
+        average, 
+        providers
+    } = req.body
+
+    console.log("req.body:", req.body)
+    console.log("types", types)
+                
+    const urlModulable = `https://api.themoviedb.org/3/discover/${types}?include_adult=${isAdult}&include_video=${isVideo}&language=${language}&page=${Number.parseInt(page)}&release_date.gte=${releaseDateGte.toString()}&release_date.lte=${releaseDateLte.toString()}&sort_by=${sortBy}&vote_average.gte=${average}&with_genres=${genres}&with_watch_providers=${providers}&api_key=${API_KEY}`;
+
+    fetch(urlModulable)
+        .then(response => response.json())
+        .then(data => {
+            res.json({result: data})
+            console.log(data)
+            console.log(typeof page)
+        });
+})
+
+
+  //router.post('/add/:token', (req, res) => {
         //console.log(req.body.friends)
     // if (!checkBody(req.body, ['list_name', 'types'])) {
     //     res.json({ result: false, error: 'Missing or empty fields' });
@@ -28,8 +74,8 @@ router.get('/get/:token', (req, res) => {
     //   let userId = User.findOne({token: (req.params.token).toString()})
     //     .then((data) => {res.json({ObjectIdUser: data.id})})
 
-    let friends = req.body.friends
-        (friends).then((data) => {res.json({friends: data})}, console.log(data))
+    // let friends = req.body.friends
+    //     (friends).then((data) => {res.json({friends: data})}, console.log(data))
 
     //   let friendId = (req.body.friends).map((friend) => {
     //     User.findOne({token : (req.body.friends).toString()})
@@ -75,7 +121,7 @@ router.get('/get/:token', (req, res) => {
     //   res.json({ result: false, error: 'User already exists' });
     // }
 //   });
-  })
+ // })
 
 
 
@@ -133,7 +179,7 @@ router.get('/get/:token', (req, res) => {
 ////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////
 
-let test = ["Movie1", "Movie2"];
+// let test = ["Movie1", "Movie2"];
 
 //Paramètres de la liste définie dans la page liste de l'application
     // 1 - Name
@@ -143,10 +189,10 @@ let test = ["Movie1", "Movie2"];
     // 5 - Streaming platforms
     // 6 - Release date
 
-function getListParameters() {
-    console.log("test")
-    return "test"
-};
+// function getListParameters() {
+//     console.log("test")
+//     return "test"
+// };
 
     //Elements query de THDB entre guillemets ci-dessous 
     //(propriété avant le "="= variable à paramétre après le "=")
@@ -233,27 +279,27 @@ function getListParameters() {
     
        
 
-    router.get('/add', async (req, res) => {
-        //res.json({result: "test route /add/list acces ok"})
-        //Liste des paramètres de la route
-        //let types = ["Movie"];
+    // router.get('/add', async (req, res) => {
+    //     //res.json({result: "test route /add/list acces ok"})
+    //     //Liste des paramètres de la route
+    //     //let types = ["Movie"];
 
-        let {
-            types,
-            genres,
-            isAdult, 
-            isVideo, 
-            language, 
-            page,
-            releaseDateGte, 
-            releaseDateLte, 
-            sortBy, 
-            average, 
-            providers
-        } = req.body
+    //     let {
+    //         types,
+    //         genres,
+    //         isAdult, 
+    //         isVideo, 
+    //         language, 
+    //         page,
+    //         releaseDateGte, 
+    //         releaseDateLte, 
+    //         sortBy, 
+    //         average, 
+    //         providers
+    //     } = req.body
 
-        console.log("req.body:", req.body)
-        console.log("types", types)
+    //     console.log("req.body:", req.body)
+    //     console.log("types", types)
 
         // const idGenresMap = types.map((element) => {
         //     //Extraire les id de la list des genres
@@ -295,16 +341,16 @@ function getListParameters() {
             //const {seachWay, type, isAdult, isVideo, language, page, sortBy, average, genre, provider, key} = req.params;
             //const urlModulable = `${BASE_URL}/${searchWay}/${type}&api_key=${API_KEY}`
             
-            const urlModulable = `https://api.themoviedb.org/3/discover/${types}?include_adult=${isAdult}&include_video=${isVideo}&language=${language}&page=${Number.parseInt(page)}&release_date.gte=${releaseDateGte.toString()}&release_date.lte=${releaseDateLte.toString()}&sort_by=${sortBy}&vote_average.gte=${average}&with_genres=${getIdGenresByTypes(types)}&with_watch_providers=${providers}&api_key=${API_KEY}`
+    //         const urlModulable = `https://api.themoviedb.org/3/discover/${types}?include_adult=${isAdult}&include_video=${isVideo}&language=${language}&page=${Number.parseInt(page)}&release_date.gte=${releaseDateGte.toString()}&release_date.lte=${releaseDateLte.toString()}&sort_by=${sortBy}&vote_average.gte=${average}&with_genres=${getIdGenresByTypes(types)}&with_watch_providers=${providers}&api_key=${API_KEY}`
 
-            fetch(urlModulable)
-                .then(response => response.json())
-                .then(data => {
-                    res.json({result: data})
-                    console.log(data)
-                    console.log(typeof page)
-                });
-    });
+    //         fetch(urlModulable)
+    //             .then(response => response.json())
+    //             .then(data => {
+    //                 res.json({result: data})
+    //                 console.log(data)
+    //                 console.log(typeof page)
+    //             });
+    // });
 
     ///:seachWay/:type/:isAdult/:isVideo/:language/:page/:sortBy/:average/:genre/:provider/:key
 

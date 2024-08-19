@@ -206,4 +206,4 @@ const getIdGenresByType = (genresMedia) => {
     return listAllGenres
 };
 
-module.exports = { getGenresByType };
+module.exports = { getIdGenresByType };
