@@ -37,9 +37,9 @@ router.post('/signup', (req, res) => {
         username: req.body.username,
         email: req.body.email,
         password: hash,
-        favouritePlatforms: req.body.providers
+        favouritePlatforms: req.body.favouritePlatforms
       });
-
+      console.log(req.body)
       newUser.save().then(newDoc => {
         res.json({ result: true, token: newDoc.token, username: newDoc.username });
       });
