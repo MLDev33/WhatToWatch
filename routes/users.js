@@ -81,7 +81,6 @@ router.delete("/:token", (req, res) => {
 });
 
 
-
 //route user pour recuperer les plateformes favorites de l'utilisateur et faire un use effect dans home avec les données
 
 router.get("/favouritePlatforms/:token", (req, res) => {
