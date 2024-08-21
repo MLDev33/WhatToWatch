@@ -81,4 +81,21 @@ router.delete("/:token", (req, res) => {
 });
 
 
+
+//route user pour recuperer les plateformes favorites de l'utilisateur et faire un use effect dans home avec les données
+
+router.get("/favouritePlatforms/:token", (req, res) => {
+  User.findOne({
+    token: req.params.token,
+  }).then(data => {
+    if (data) {
+      res.json({ result: true, favouritePlatforms: data.favouritePlatforms });
+    } else {
+      res.json({ result: false, error: "User not found" });
+    }
+  });
+});
+
+
+
 module.exports = router;
