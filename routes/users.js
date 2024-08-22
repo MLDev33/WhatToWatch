@@ -12,23 +12,77 @@ router.get("/", function (req, res, next) {
   res.send("respond with a resource");
 });
 
-router.post("/signup", (req, res) => {
-  if (!checkBody(req.body, ["username", "email", "password"])) {
+router.post('/checkUser', async(req, res) => {
+  if (!checkBody(req.body, ["username", "email"])) {
     res.json({ result: false, error: "Missing or empty fields" });
     return;
   }
   // Vérifier si le nom d'utilisateur existe déjà
-  User.findOne({ username: req.body.username }).then((userByUsername) => {
+  const userByUsername = await User.findOne({ username: req.body.username })
+  
     if (userByUsername !== null) {
       res.json({ result: false, error: "Username already exists" });
       return;
     }
     // Vérifier si l'email existe déjà
-    User.findOne({ email: req.body.email }).then((userByEmail) => {
+    const userByEmail = await User.findOne({ email: req.body.email })
       if (userByEmail !== null) {
         res.json({ result: false, error: "Email already exists" });
         return;
       }
+      res.json({result: true})
+  })
+
+// router.post('/checkUserByUsername', (req, res) => {
+//   if (!checkBody(req.body, ["username"])) {
+//     res.json({ result: false, error: "Missing or empty fields" });
+//     return;
+//   }
+//   // Vérifier si le nom d'utilisateur existe déjà
+//    User.findOne({ username: req.body.username }).then((userByUsername) => {
+//       if (userByUsername !== null) {
+//         res.json({ result: false, error: "Username already exists" });
+//         return;
+//       }
+//       res.json({result: true})
+//   })
+// })
+
+// router.post('/checkUserByEmail', (req, res) => {
+//   if (!checkBody(req.body, ["email"])) {
+//     res.json({ result: false, error: "Missing or empty fields" });
+//     return;
+//   }
+//     // Vérifier si l'email existe déjà
+//     User.findOne({ email: req.body.email }).then((userByEmail) => {
+//           if (userByEmail !== null) {
+//             res.json({ result: false, error: "Email already exists" });
+//             return;
+//           }
+//       res.json({result: true})
+//   })
+// })
+
+
+router.post("/signup", (req, res) => {
+  if (!checkBody(req.body, ["username", "email", "password"])) {
+    res.json({ result: false, error: "Missing or empty fields" });
+    return;
+  }
+  // we have already checked if the user or email already exist, no need to check again
+  // Vérifier si le nom d'utilisateur existe déjà 
+  // User.findOne({ username: req.body.username }).then((userByUsername) => {
+  //   if (userByUsername !== null) {
+  //     res.json({ result: false, error: "Username already exists" });
+  //     return;
+  //   }
+  //   // Vérifier si l'email existe déjà
+  //   User.findOne({ email: req.body.email }).then((userByEmail) => {
+  //     if (userByEmail !== null) {
+  //       res.json({ result: false, error: "Email already exists" });
+  //       return;
+  //     }
+
       // Si le nom d'utilisateur et l'email n'existent pas, créer un nouvel utilisateur
       const hash = bcrypt.hashSync(req.body.password, 10);
 
@@ -49,32 +103,8 @@ router.post("/signup", (req, res) => {
         });
       });
     });
-  });
-});
 
-// router.post('/avatar', async(req, res) => {
-//   const { userToken, avatar } = req.body;
-
-//   try {
-//     // Vérification de l'utilisateur
-//     const user = await User.findOne({ token: userToken });
-//     if (!user) {
-//       return res.status(404).json({ success: false, message: "Utilisateur non trouvé" });
-//     }
-//     if(!avatar){
-//       return res.status(404).json({ success: false, message: "avatar non trouvé" });
-//     }
-//     console.log(avatar, "av")
-//   User.updateOne(
-//     {token: userToken},
-//     {$set:{avatar: avatar}}
-//   )
-//   res.json({result: true})
-// } catch(error) {
-//   res.status(500).json({ success: false, message: "Erreur serveur", error: error.message });
-// }
-// });
-
+//update userDocument by adding avatar 
 router.post("/avatar/:token", (req, res) => {
   const avatar = req.body.avatar;
   if (!avatar) {
