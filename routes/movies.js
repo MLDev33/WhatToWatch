@@ -431,6 +431,55 @@ router.get('/user-likes', async (req, res) => {
   }
 });
 
+
+
+//------route POST pour ajouter un film/serie a la watchlist de l'utilisateur------//
+router.post('/watchlist/:token', async (req, res) => {
+  try {
+    const { movie_id, scheduled_time } = req.body;
+    const userToken = req.params.token;
+
+    // 1. Trouver l'utilisateur avec le token
+    const user = await User.findOne({ token: userToken });
+    if (!user) {
+      return res.status(404).json({ result: false, error: 'Utilisateur non trouvé' });
+    }
+
+    // 2. Convertir movie_id en ObjectId si ce n'est pas déjà le cas
+    let media = await Media.findOne({ tmdbId: movie_id });
+    if (!media) {
+      return res.status(404).json({ result: false, error: 'Media non trouvé' });
+    }
+
+    // 3. Ajouter le média à la watchlist de l'utilisateur
+    user.watchlist.push({
+      movie_id: media._id, // Assurez-vous que l'ID est bien celui du document Media
+      scheduled_time: scheduled_time || null
+    });
+
+    // 4. Sauvegarder les modifications
+    await user.save();
+
+    res.json({ result: true, watchlist: user.watchlist });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ result: false, error: 'Erreur serveur' });
+  }
+});
+
+// Route pour obtenir la liste des films dans la watchlist de l'utilisateur
+router.get('/watchlist/:token', async (req, res) => {
+  try {
+    const user = await User.findOne({ token: req.params.token }).populate('watchlist.movie_id');
+    if (!user) {
+      return res.status(404).json({ result: false, error: "User not found" });
+    }
+    console.log('Watchlist:', user.watchlist); 
+    res.json({ result: true, watchlist: user.watchlist });
+  } catch (error) {
+    res.status(500).json({ result: false, error: error.message });
+  }
+});
 //------------------------------------EXPERIMENTAL------------------------------------//
 //essai de faire une route entierement modulable selon les options donnes en params depuis le front
 /*TMDB permet de choisir
