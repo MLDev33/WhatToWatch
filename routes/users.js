@@ -33,36 +33,6 @@ router.post('/checkUser', async(req, res) => {
       res.json({result: true})
   })
 
-// router.post('/checkUserByUsername', (req, res) => {
-//   if (!checkBody(req.body, ["username"])) {
-//     res.json({ result: false, error: "Missing or empty fields" });
-//     return;
-//   }
-//   // Vérifier si le nom d'utilisateur existe déjà
-//    User.findOne({ username: req.body.username }).then((userByUsername) => {
-//       if (userByUsername !== null) {
-//         res.json({ result: false, error: "Username already exists" });
-//         return;
-//       }
-//       res.json({result: true})
-//   })
-// })
-
-// router.post('/checkUserByEmail', (req, res) => {
-//   if (!checkBody(req.body, ["email"])) {
-//     res.json({ result: false, error: "Missing or empty fields" });
-//     return;
-//   }
-//     // Vérifier si l'email existe déjà
-//     User.findOne({ email: req.body.email }).then((userByEmail) => {
-//           if (userByEmail !== null) {
-//             res.json({ result: false, error: "Email already exists" });
-//             return;
-//           }
-//       res.json({result: true})
-//   })
-// })
-
 
 router.post("/signup", (req, res) => {
   if (!checkBody(req.body, ["username", "email", "password"])) {
