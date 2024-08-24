@@ -61,21 +61,20 @@ router.post('/add/tv/:token', (req,res) => {
     let total_results;
     let total_pages;
     let limite_pages = 100;
-    let resultsMedia = [];
+    const resultsMedia = [];
+    let view
 
     for(i = 1; i <= limite_pages ; i++ ){
         let page = i;
         fetch(urlModulable)
             .then(response => response.json())
             .then(data => {
-                data.results.map((media) => {
-                    console.log("media", media.original_name)
-                })
-                //resultsMedia = resultsMedia.concat(data.results);
+                console.log(data.results)
+                res.json({results: true, media: data.results})
             });
-        
+           
     }
-    //console.log("allpages", resultsMedia.lenght)
+    
 })
 
 
