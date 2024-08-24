@@ -29,9 +29,7 @@ router.get('/get/:token', (req, res) => {
     // 5 - Streaming platforms
     // 6 - Release date Gte
     // 7 - Release date Lte
-router.post('/add', (req,res) => {
-
-    //let types = ['Movie'];
+router.post('/add/:token', (req,res) => {
 
     let {
         types,
@@ -50,7 +48,9 @@ router.post('/add', (req,res) => {
     console.log("req.body:", req.body)
     console.log("types", types)
                 
-    const urlModulable = `https://api.themoviedb.org/3/discover/${types}?include_adult=${isAdult}&include_video=${isVideo}&language=${language}&page=${Number.parseInt(page)}&release_date.gte=${releaseDateGte.toString()}&release_date.lte=${releaseDateLte.toString()}&sort_by=${sortBy}&vote_average.gte=${average}&with_genres=${genres}&with_watch_providers=${providers}&api_key=${API_KEY}`;
+    //const urlModulable = `https://api.themoviedb.org/3/discover/${types}?include_adult=${isAdult}&include_video=${isVideo}&language=${language}&page=${Number.parseInt(page)}&release_date.gte=${releaseDateGte.toString()}&release_date.lte=${releaseDateLte.toString()}&sort_by=${sortBy}&vote_average.gte=${average}&with_genres=${genres}&with_watch_providers=${providers}&api_key=${API_KEY}`;
+    const urlModulable = `https://api.themoviedb.org/3/discover/${types}?include_adult=false&include_video=false&language=fr-FR&page=1&sort_by=popularity.asc&vote_average.gte=${Number.parseInt(average)}&with_genres=35&with_watch_providers=Netflix&api_key=${API_KEY}`;
+
 
     fetch(urlModulable)
         .then(response => response.json())
