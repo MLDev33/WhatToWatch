@@ -144,21 +144,25 @@ router.post("/signin", (req, res) => {
 });
 
 router.delete("/:token", (req, res) => {
-  User.deleteOne({
-    token: req.params.token,
-  }).then((deletedDoc) => {
-    if (deletedDoc.deletedCount > 0) {
-      User.find().then((data) => {
-        res.json({ result: true, token: data.token });
-      })
+  User.findOne({ token: req.params.token }).then((data) => {
+    if (data && bcrypt.compareSync(req.body.password, data.password)) {
+      User.deleteOne({
+        token: req.params.token,
+      }).then((deletedDoc) => {
+        if (deletedDoc.deletedCount > 0) {
+          User.find().then((data) => {
+            res.json({ result: true, token: data.token });
+          })
+        } else {
+          res.json({ result: false, error: "User not found" });
+        }
+      }
+    )
     } else {
-      res.json({ result: false, error: "User not found" });
+      res.json({ result: false, error: "Wrong password" });
     }
-  }
-    
-  );
+  });
 });
-
 
 //route user pour recuperer les plateformes favorites de l'utilisateur et faire un use effect dans home avec les données
 
