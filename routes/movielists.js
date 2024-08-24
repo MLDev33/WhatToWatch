@@ -29,7 +29,21 @@ router.post('/save/:token', (req, res) => {
         User.findOne({token: req.params.token.toString()})
             .then(data => {
                 if(data){
-                    res.json({result: true, data: data})
+                    const newMovieLists = new MovieLists({
+                        token: data.token,
+                        list_name: req.body.list_name,
+                        creator: data._id,
+                        options:
+                            {
+                                content_type: req.body.types,
+                                genre: req.body.genres,
+                                streaming_platform: req.body.providers,
+                            },
+                    });
+
+                    newMovieLists.save().then(newDoc => {
+                        res.json({ result: true, movieLists: newDoc})
+                    })
                 }
                 else{
                     res.json({ result: false, error: "User not found"});
