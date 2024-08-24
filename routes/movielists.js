@@ -32,7 +32,7 @@ router.get('/get/:token', (req, res) => {
 router.post('/add/:token', (req,res) => {
 
     let {
-        types,
+        type,
         genres,
         isAdult, 
         isVideo, 
@@ -42,14 +42,20 @@ router.post('/add/:token', (req,res) => {
         releaseDateLte, 
         sortBy, 
         average, 
-        providers
+        providers,
+        list_name,
     } = req.body
 
     console.log("req.body:", req.body)
-    console.log("types", types)
+    console.log("type", type)
+
+    if(!checkBody(req.body, ['list_name', 'type'])) {
+        res.json({ result: false, error: 'Missing or empty fields' });
+        return;
+    }
                 
-    //const urlModulable = `https://api.themoviedb.org/3/discover/${types}?include_adult=${isAdult}&include_video=${isVideo}&language=${language}&page=${Number.parseInt(page)}&release_date.gte=${releaseDateGte.toString()}&release_date.lte=${releaseDateLte.toString()}&sort_by=${sortBy}&vote_average.gte=${average}&with_genres=${genres}&with_watch_providers=${providers}&api_key=${API_KEY}`;
-    const urlModulable = `https://api.themoviedb.org/3/discover/${types}?include_adult=false&include_video=false&language=fr-FR&page=1&sort_by=popularity.asc&vote_average.gte=${Number.parseInt(average)}&with_genres=35&with_watch_providers=Netflix&api_key=${API_KEY}`;
+    const urlModulable = `https://api.themoviedb.org/3/discover/${type}?include_adult=${isAdult}&include_video=${isVideo}&language=${language}&page=${Number.parseInt(page)}&release_date.gte=${releaseDateGte.toString()}&release_date.lte=${releaseDateLte.toString()}&sort_by=${sortBy}&vote_average.gte=${average}&with_genres=${genres}&with_watch_providers=${providers}&api_key=${API_KEY}`;
+    //const urlModulable = `https://api.themoviedb.org/3/discover/${type}?include_adult=false&include_video=false&language=fr-FR&page=1&sort_by=popularity.asc&vote_average.gte=${Number.parseInt(average)}&with_genres=35&with_watch_providers=Netflix&api_key=${API_KEY}`;
 
 
     fetch(urlModulable)
