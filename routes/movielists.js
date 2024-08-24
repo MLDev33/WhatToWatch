@@ -1,10 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const fetch = require('node-fetch');
-const MovieLists = require('../models/movielists')
-const User = require('../models/users')
+const MovieLists = require('../models/movielists');
+const User = require('../models/users');
+const Media = require('../models/media.js');
 const { checkBody } = require('../modules/checkBody');
-const { getIdGenresByType } = require('../modules/IdGenresByType.js')
+const { getIdGenresByType } = require('../modules/IdGenresByType.js');
 
 const API_KEY = process.env.API_KEY;
 const BASE_URL = 'https://api.themoviedb.org/3';
@@ -22,13 +23,14 @@ router.get('/get/:token', (req, res) => {
   })
 
 // Route pour sauvegarder les paramètres d'une liste à sa création
-router.post('/save/:token', (req, res) => {
+router.post('/add/:token', (req, res) => {
     //    let userId = User.findOne({token: (req.params.token).toString()})
     //         .then((data) => {res.json({ObjectIdUser: data.id})})
 
         User.findOne({token: req.params.token.toString()})
             .then(data => {
                 if(data){
+
                     const newMovieLists = new MovieLists({
                         token: data.token,
                         list_name: req.body.list_name,
@@ -39,6 +41,7 @@ router.post('/save/:token', (req, res) => {
                                 genre: req.body.genres,
                                 streaming_platform: req.body.providers,
                             },
+                        avatar: req.body.avatar,
                     });
 
                     newMovieLists.save().then(newDoc => {
