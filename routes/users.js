@@ -1,27 +1,59 @@
-var express = require('express');
+var express = require("express");
 var router = express.Router();
 
-require('../models/connection');
-const User = require('../models/users');
-const { checkBody } = require('../modules/checkBody');
-const uid2 = require('uid2');
-const bcrypt = require('bcrypt');
+require("../models/connection");
+const User = require("../models/users");
+const { checkBody } = require("../modules/checkBody");
+const uid2 = require("uid2");
+const bcrypt = require("bcrypt");
 
 /* GET users listing. */
-router.get('/', function(req, res, next) {
-  res.send('respond with a resource');
+router.get("/", function (req, res, next) {
+  res.send("respond with a resource");
 });
 
-router.post('/signup', (req, res) => {
-
-  if (!checkBody(req.body, ['username', 'email', 'password'])) {
-    res.json({ result: false, error: 'Missing or empty fields' });
+router.post('/checkUser', async(req, res) => {
+  if (!checkBody(req.body, ["username", "email"])) {
+    res.json({ result: false, error: "Missing or empty fields" });
     return;
   }
+  // Vérifier si le nom d'utilisateur existe déjà
+  const userByUsername = await User.findOne({ username: req.body.username })
+  
+    if (userByUsername !== null) {
+      res.json({ result: false, error: "Username already exists" });
+      return;
+    }
+    // Vérifier si l'email existe déjà
+    const userByEmail = await User.findOne({ email: req.body.email })
+      if (userByEmail !== null) {
+        res.json({ result: false, error: "Email already exists" });
+        return;
+      }
+      res.json({result: true})
+  })
 
-  // Check if the user has not already been registered
-  User.findOne({ username: req.body.username }).then(data => {
-    if (data === null) {
+
+router.post("/signup", (req, res) => {
+  if (!checkBody(req.body, ["username", "email", "password"])) {
+    res.json({ result: false, error: "Missing or empty fields" });
+    return;
+  }
+  // we have already checked if the user or email already exist, no need to check again
+  // Vérifier si le nom d'utilisateur existe déjà 
+  // User.findOne({ username: req.body.username }).then((userByUsername) => {
+  //   if (userByUsername !== null) {
+  //     res.json({ result: false, error: "Username already exists" });
+  //     return;
+  //   }
+  //   // Vérifier si l'email existe déjà
+  //   User.findOne({ email: req.body.email }).then((userByEmail) => {
+  //     if (userByEmail !== null) {
+  //       res.json({ result: false, error: "Email already exists" });
+  //       return;
+  //     }
+
+      // Si le nom d'utilisateur et l'email n'existent pas, créer un nouvel utilisateur
       const hash = bcrypt.hashSync(req.body.password, 10);
 
       const newUser = new User({
@@ -29,30 +61,89 @@ router.post('/signup', (req, res) => {
         username: req.body.username,
         email: req.body.email,
         password: hash,
+        favouritePlatforms: req.body.favouritePlatforms,
+        avatar: "",
       });
+      console.log(req.body);
+      newUser.save().then((newDoc) => {
+        res.json({
+          result: true,
+          token: newDoc.token,
+          username: newDoc.username,
+        });
+      });
+    });
 
-      newUser.save().then(newDoc => {
-        res.json({ result: true, token: newDoc.token, username: newDoc.username });
-      });
+//update userDocument by adding avatar 
+router.post("/avatar/:token", (req, res) => {
+  const avatar = req.body.avatar;
+  if (!avatar) {
+    return res.status(400).json({ result: false, error: "Avatar is required" });
+  }
+  User.findOneAndUpdate(
+    { token: req.params.token },
+    { avatar: avatar },
+    { new: true }
+  )
+    .then((data) => {
+      if (data) {
+        res.json({ result: true, avatar: data.avatar });
+      } else {
+        res.json({ result: false, error: "User not found" });
+      }
+    })
+    .catch((err) => {
+      res.status(500).json({ result: false, error: err.message });
+    });
+});
+
+router.post("/signin", (req, res) => {
+  if (!checkBody(req.body, ["username", "password"])) {
+    res.json({ result: false, error: "Missing or empty fields" });
+    return;
+  }
+
+  User.findOne({ username: req.body.username }).then((data) => {
+    if (data && bcrypt.compareSync(req.body.password, data.password)) {
+      res.json({ result: true, token: data.token, email: data.email });
+      console.log(data);
     } else {
-      // User already exists in database
-      res.json({ result: false, error: 'User already exists' });
+      res.json({ result: false, error: "User not found or wrong password" });
     }
   });
 });
 
-router.post('/signin', (req, res) => {
-  if (!checkBody(req.body, ['username', 'password'])) {
-    res.json({ result: false, error: 'Missing or empty fields' });
-    return;
-  }
-
-  User.findOne({ username: req.body.username }).then(data => {
+router.delete("/:token", (req, res) => {
+  User.findOne({ token: req.params.token }).then((data) => {
     if (data && bcrypt.compareSync(req.body.password, data.password)) {
-      res.json({ result: true, token: data.token, email: data.email });
-      console.log(data)
+      User.deleteOne({
+        token: req.params.token,
+      }).then((deletedDoc) => {
+        if (deletedDoc.deletedCount > 0) {
+          User.find().then((data) => {
+            res.json({ result: true, token: data.token });
+          })
+        } else {
+          res.json({ result: false, error: "User not found" });
+        }
+      }
+    )
     } else {
-      res.json({ result: false, error: 'User not found or wrong password' });
+      res.json({ result: false, error: "Wrong password" });
+    }
+  });
+});
+
+//route user pour recuperer les plateformes favorites de l'utilisateur et faire un use effect dans home avec les données
+
+router.get("/favouritePlatforms/:token", (req, res) => {
+  User.findOne({
+    token: req.params.token,
+  }).then(data => {
+    if (data) {
+      res.json({ result: true, favouritePlatforms: data.favouritePlatforms });
+    } else {
+      res.json({ result: false, error: "User not found" });
     }
   });
 });

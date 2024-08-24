@@ -13,7 +13,7 @@ const BASE_URL = 'https://api.themoviedb.org/3';
 
 // Route pour consulter les lists déjà existante de l'utilisateur
 router.get('/get/:token', (req, res) => {
-    Movielists.find({ token: req.params.token }).then(data => {
+    MovieLists.find({ token: req.params.token }).then(data => {
         if (data) {
           res.json({ result: true, data: data});
         } else {
@@ -40,6 +40,10 @@ router.post('/add/:token', (req, res) => {
                                 content_type: req.body.types,
                                 genre: req.body.genres,
                                 streaming_platform: req.body.providers,
+                                // average, releaseDateGte et ReleaseDateLte à rajouter au schema initial de movielists
+                                // average: Number.parseInt(req.body.rating),
+                                // releaseDateGte: req.body.releaseDateGte,
+                                // releaseDateLte: req.body.releaseDateLte,
                             },
                         avatar: req.body.avatar,
                     });
