@@ -9,6 +9,7 @@ const { getIdGenresByType } = require('../modules/IdGenresByType.js')
 const API_KEY = process.env.API_KEY;
 const BASE_URL = 'https://api.themoviedb.org/3';
 
+
 // Route pour consulter les lists déjà existante de l'utilisateur
 router.get('/get/:token', (req, res) => {
     Movielists.find({ token: req.params.token }).then(data => {
@@ -29,7 +30,7 @@ router.get('/get/:token', (req, res) => {
     // 5 - Streaming platforms
     // 6 - Release date Gte
     // 7 - Release date Lte
-router.post('/add/:token', (req,res) => {
+router.post('/add/tv/:token', (req,res) => {
 
     let {
         type,
@@ -37,7 +38,7 @@ router.post('/add/:token', (req,res) => {
         isAdult, 
         isVideo, 
         language, 
-        page,
+        page = 1,
         releaseDateGte, 
         releaseDateLte, 
         sortBy, 
@@ -57,14 +58,24 @@ router.post('/add/:token', (req,res) => {
     const urlModulable = `https://api.themoviedb.org/3/discover/${type}?include_adult=${isAdult}&include_video=${isVideo}&language=${language}&page=${Number.parseInt(page)}&release_date.gte=${releaseDateGte.toString()}&release_date.lte=${releaseDateLte.toString()}&sort_by=${sortBy}&vote_average.gte=${average}&with_genres=${genres}&with_watch_providers=${providers}&api_key=${API_KEY}`;
     //const urlModulable = `https://api.themoviedb.org/3/discover/${type}?include_adult=false&include_video=false&language=fr-FR&page=1&sort_by=popularity.asc&vote_average.gte=${Number.parseInt(average)}&with_genres=35&with_watch_providers=Netflix&api_key=${API_KEY}`;
 
+    let total_results;
+    let total_pages;
+    let limite_pages = 100;
+    let resultsMedia = [];
 
-    fetch(urlModulable)
-        .then(response => response.json())
-        .then(data => {
-            res.json({result: data})
-            console.log(data)
-            console.log(typeof page)
-        });
+    for(i = 1; i <= limite_pages ; i++ ){
+        let page = i;
+        fetch(urlModulable)
+            .then(response => response.json())
+            .then(data => {
+                data.results.map((media) => {
+                    console.log("media", media.original_name)
+                })
+                //resultsMedia = resultsMedia.concat(data.results);
+            });
+        
+    }
+    //console.log("allpages", resultsMedia.lenght)
 })
 
 
