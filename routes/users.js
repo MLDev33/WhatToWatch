@@ -159,8 +159,8 @@ router.post('/addList/:token', (req, res) => {
       if(data){
         data.created_list.push(req.body.list_id.toString())
         data.save().then(()=> {
-          console.log("created_list de l'utilisateur:", data.created_list)
-          res.json({ result: true, create_list : data.create_list});
+          console.log("created_list de l'utilisateur:", data.created_list);
+          res.json({ result: true, list : data.populate("created_list")});
         })
       }
       else{
