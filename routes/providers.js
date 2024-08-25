@@ -27,11 +27,13 @@ router.get('/get/tv', (req, res) => {
     .then(response => response.json())
     .then(data => {
         let newData = data.results.map((provider) => {
-            console.log(provider.provider_name)
-        })
+            name: provider.provider_name;
+            logo: provider.logo_path;
 
-        res.json({results: data})
-        console.log("Reponse fetch providers tv:", data)
+
+        })
+        res.json({results: newData})
+        console.log("Reponse fetch providers tv:", newData)
     })
     .catch(err => console.error(err));
 
