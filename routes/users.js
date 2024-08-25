@@ -12,6 +12,7 @@ router.get("/", function (req, res, next) {
   res.send("respond with a resource");
 });
 
+//route to check if username or email exists already on signup screen before opening the platform modal
 router.post('/checkUser', async(req, res) => {
   if (!checkBody(req.body, ["username", "email"])) {
     res.json({ result: false, error: "Missing or empty fields" });
@@ -33,7 +34,7 @@ router.post('/checkUser', async(req, res) => {
       res.json({result: true})
   })
 
-
+//route signup // as explained below, in the previous route, which is called one level up, we have already checked if username or email have been used, so no need to do it twice
 router.post("/signup", (req, res) => {
   if (!checkBody(req.body, ["username", "email", "password"])) {
     res.json({ result: false, error: "Missing or empty fields" });
@@ -97,6 +98,7 @@ router.post("/avatar/:token", (req, res) => {
     });
 });
 
+//route signIn - tBC - check if we have to send platforms as login stopped working 
 router.post("/signin", (req, res) => {
   if (!checkBody(req.body, ["username", "password"])) {
     res.json({ result: false, error: "Missing or empty fields" });
@@ -113,6 +115,7 @@ router.post("/signin", (req, res) => {
   });
 });
 
+//route to delete account
 router.delete("/:token", (req, res) => {
   User.findOne({ token: req.params.token }).then((data) => {
     if (data && bcrypt.compareSync(req.body.password, data.password)) {
@@ -135,7 +138,6 @@ router.delete("/:token", (req, res) => {
 });
 
 //route user pour recuperer les plateformes favorites de l'utilisateur et faire un use effect dans home avec les données
-
 router.get("/favouritePlatforms/:token", (req, res) => {
   User.findOne({
     token: req.params.token,
@@ -145,6 +147,90 @@ router.get("/favouritePlatforms/:token", (req, res) => {
     } else {
       res.json({ result: false, error: "User not found" });
     }
+  });
+});
+
+
+// route to change password
+router.post("/updatePassword/:token", (req, res) => {
+  if (!checkBody(req.body, ["password", "verifyPassword", "confirmPassword"])) {
+    res.json({ result: false, error: "Missing or empty fields" });
+    return;
+  }
+  User.findOne({ token: req.params.token }).then((data) => {
+    if (data && bcrypt.compareSync(req.body.password, data.password)) {
+      const hash = bcrypt.hashSync(req.body.verifyPassword, 10);
+      User.updateOne(
+        { token: req.params.token },
+        { password: hash },
+        { new: true }
+      )
+      .then((data) => {
+        if (data) {
+          res.json({ result: true, token: data.token });
+        } else {
+          res.json({ result: false, error: "User not found" });
+        }
+      })
+      .catch((err) => {
+        res.status(500).json({ result: false, error: err.message });
+      });
+    } else {
+      res.json({ result: false, error: "User not found" });
+    }})
+  });
+
+  //route to update email // token as params
+  router.post("/updateEmail/:token", (req, res) => {
+    if (!checkBody(req.body, ["newEmail"])) {
+      res.json({ result: false, error: "Missing or empty field" });
+      return;
+    }
+    const email = req.body.newEmail;
+  if (!email) {
+    return res.status(400).json({ result: false, error: "New Email is required" });
+  }
+  User.findOneAndUpdate(
+    { token: req.params.token },
+    { email: newEmail },
+    { new: true }
+  )
+    .then((data) => {
+      if (data) {
+        res.json({ result: true, email: data.email });
+      } else {
+        res.json({ result: false, error: "User not found" });
+      }
+    })
+    .catch((err) => {
+      res.status(500).json({ result: false, error: err.message });
+    });
+});
+  
+ //route to update username // token as params
+router.post("/updateUsername/:token", (req, res) => {
+  if (!checkBody(req.body, ["newUsername"])) {
+    res.json({ result: false, error: "Missing or empty field" });
+    return;
+  }
+  const username = req.body.newUsername;
+if (!newUsername) {
+  return res.status(400).json({ result: false, error: "New Username is required" });
+}
+User.findOneAndUpdate(
+  { token: req.params.token },
+  { username: newUsername },
+  { new: true }
+)
+  .then((data) => {
+    if (data) {
+      res.json({ result: true, username: data.username });
+    } else {
+      res.json({ result: false, error: "User not found" });
+    }
+  })
+  .catch((err) => {
+    res.status(500).json({ result: false, error: err.message });
   });
 });
 
