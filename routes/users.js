@@ -148,4 +148,60 @@ router.get("/favouritePlatforms/:token", (req, res) => {
   });
 });
 
+
+// Route mettre à jour les lists créées par l'utilisateur
+// update created_list from user
+router.post('/addList/:token', (req, res) => {
+  User.findOne({token: req.params.token })
+    .then(data => {
+      // console.log("data.user:", data.user)
+      // res.json({ result: true, data: data});
+      if(data){
+        data.created_list.push(req.body.list_id.toString())
+        data.save().then(()=> {
+          console.log("created_list de l'utilisateur:", data.created_list)
+          res.json({ result: true, create_list : data.create_list});
+        })
+      }
+      else{
+        res.json({ result: false, error: "User not found"});
+      }
+    })
+})
+
+// Route pour consulter les lists déjà existantes de l'utilisateur
+router.get('/created_list/:token', (req, res) => {
+  try 
+  {
+      // Vérification de l'utilisateur
+      User.findOne({ token: req.params.token.toString() });
+          if (User) {
+            res.json({ result: true, create_list : data.create_list});
+          }
+          else {
+
+            res.json({ result: false, error: "User not found"});
+          }
+          
+      
+      // Récupération des lists de l'utilisateur  
+      // User.find({ token: req.params.token.toString()}).then(data => {
+      //     if (data) {
+      //         console.log('datalistfetch:', data)
+      //         res.json({ result: true, data: data});
+      //     } else {
+      //         res.json({ result: false, error: 'Medialists not found' });
+      //     }
+      // });
+
+
+
+
+
+
+  } catch (error) {
+      res.status(500).json({ success: false, message: "Erreur serveur", error: error.message });
+  }
+})
+
 module.exports = router;

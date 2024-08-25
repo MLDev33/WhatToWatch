@@ -7,7 +7,7 @@ const userSchema = mongoose.Schema({
     password: String,
     favouritePlatforms: [String],
     avatar: String,
-    created_list: { type: mongoose.Schema.Types.ObjectId, ref: 'MovieList' },
+    created_list: [{ type: mongoose.Schema.Types.ObjectId, ref: 'MovieList' }], // Array d'object 
     invited_list: { type: mongoose.Schema.Types.ObjectId, ref: 'MovieList' },
     liked_movies: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Media' }],
     watched_movies: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Media' }],

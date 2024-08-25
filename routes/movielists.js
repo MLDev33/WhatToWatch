@@ -11,17 +11,6 @@ const API_KEY = process.env.API_KEY;
 const BASE_URL = 'https://api.themoviedb.org/3';
 
 
-// Route pour consulter les lists déjà existante de l'utilisateur
-router.get('/get/:token', (req, res) => {
-    MovieLists.find({ token: req.params.token }).then(data => {
-        if (data) {
-          res.json({ result: true, data: data});
-        } else {
-          res.json({ result: false, error: 'Medialists not found' });
-        }
-    });
-  })
-
 // Route pour sauvegarder les paramètres d'une liste à sa création
 router.post('/add/:token', (req, res) => {
     //    let userId = User.findOne({token: (req.params.token).toString()})
