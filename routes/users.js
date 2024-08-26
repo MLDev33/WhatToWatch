@@ -6,6 +6,7 @@ const User = require("../models/users");
 const { checkBody } = require("../modules/checkBody");
 const uid2 = require("uid2");
 const bcrypt = require("bcrypt");
+const MovieList = require("../models/movielists.js");
 
 /* GET users listing. */
 router.get("/", function (req, res, next) {
@@ -177,7 +178,17 @@ router.get('/lists/:token', (req, res) => {
     User.findOne({ token: req.params.token })
       .then(data => {
         if (User) {
-          res.json({ result: true, create_list : data});
+          
+          const userMovieLists = data.created_list.map((id) => {
+              let list = MovieList.findById(id)
+                .then(element => 
+                  console.log("userlist", element),
+                )
+                return list
+          })
+          console.log("userMovieLists:", userMovieLists)
+          res.json({ result: true, created_list : userMovieLists});
+          
         }
         else {
 
