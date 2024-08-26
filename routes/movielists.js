@@ -25,7 +25,7 @@ router.post('/add/:token', async (req, res) => {
     
     try {
         // Vérification de l'utilisateur
-        const user = await User.findOne({ token: userToken });
+        const user = await User.findOne({ token: req.params.token });
         if (!user) {
         return res.status(404).json({ success: false, message: "Utilisateur non trouvé" });
         }
@@ -52,7 +52,9 @@ router.post('/add/:token', async (req, res) => {
                         });
 
                         newMovieLists.save().then(newDoc => {
-                            User.created_list.push(newDoc._id);
+                            user.created_list.push(newDoc._id);
+                            user.save()
+                            console.log("user created_list:", user)
                             res.json({ result: true, movieLists: newDoc})
                         })
                     }
