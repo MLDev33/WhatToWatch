@@ -10,6 +10,9 @@ const { getIdGenresByType } = require('../modules/IdGenresByType.js');
 const API_KEY = process.env.API_KEY;
 const BASE_URL = 'https://api.themoviedb.org/3';
 
+    function isEmpty(array){
+        return Array.isArray(array) && array.length === 0
+    }
 
 // Route pour voir les lists de l'utilisateur
 router.get('/get/:token', (req, res) => {
@@ -95,12 +98,26 @@ router.post('/add/:token', async (req, res) => {
             average, 
             providers
         } = req.body
-    
+
+        let include_adult = isEmpty(isAdult) ? `&include_adult=${false}` : `&include_adult=${isAdult}`;
+        let include_video = isEmpty(isVideo) ? `&include_video=${false}` : `&include_video=${isAdult}`;
+        let languageChoice = isEmpty(language) ? `&language=${fr-Fr}` : `&language=${language}`;
+        let pageSelect = isEmpty(language) ? `&page=${1}` : `&page=${Number.parseInt(page)}`;
+        let release_dateGte = isEmpty(releaseDateGte) ? `` : `&release_date.gte=${releaseDateGte.toString()}`;
+        let release_dateLte = isEmpty(releaseDateLte) ? `` : `&release_date.lte=${releaseDateLte.toString()}`;
+        let sort_by = isEmpty(sortBy) ? `&sort_by=${    }` : `&sort_by=${sortBy}` ;
+        let vote_averageGte =  isEmpty(average) ? `` : `&vote_average.gte=${average}`;
+        let with_genres =  isEmpty(genres) ? `` : `&with_genres=${genres}`;
+        let with_watch_providers =  isEmpty(providers) ? `` : `&with_watch_providers=${providers}`;
+
+        
+
         console.log("req.body:", req.body)
         console.log("types", types)
                     
-        const urlModulable = `https://api.themoviedb.org/3/discover/${types}?include_adult=${isAdult}&include_video=${isVideo}&language=${language}&page=${Number.parseInt(page)}&release_date.gte=${releaseDateGte.toString()}&release_date.lte=${releaseDateLte.toString()}&sort_by=${sortBy}&vote_average.gte=${average}&with_genres=${genres}&with_watch_providers=${providers}&api_key=${API_KEY}`;
-    
+        //const urlModulable = `https://api.themoviedb.org/3/discover/${types}?include_adult=${isAdult}&include_video=${isVideo}&language=${language}&page=${Number.parseInt(page)}&release_date.gte=${releaseDateGte.toString()}&release_date.lte=${releaseDateLte.toString()}&sort_by=${sortBy}&vote_average.gte=${average}&with_genres=${genres}&with_watch_providers=${providers}&api_key=${API_KEY}`;
+        const urlModulable = `https://api.themoviedb.org/3/discover/${types}?${include_adult}${include_video}${languageChoice}${pageSelect}${release_dateGte}${release_dateLte}${sort_by}${average}${gwith_genres}${with_watch_providers}&api_key=${API_KEY}`;
+
         fetch(urlModulable)
             .then(response => response.json())
             .then(data => {

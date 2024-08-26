@@ -180,6 +180,7 @@ router.get('/lists/:token', async (req, res) => {
 
   try {
     const user = await User.findOne({ token: req.params.token }).populate('created_list');
+    console.log("user await:",user)
     if (!user) {
       return res.status(404).json({ success: false, message: "Utilisateur non trouvé" });
     }
@@ -193,7 +194,7 @@ router.get('/lists/:token', async (req, res) => {
     res.status(200).json({ 
       success: true, 
       listsMedia,
-      totallist: listsMedia.length
+      totalList: listsMedia.length
     });
 
           

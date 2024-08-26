@@ -29,8 +29,6 @@ router.get('/get/tv', (req, res) => {
         let newData = data.results.map((provider) => {
             name: provider.provider_name;
             logo: provider.logo_path;
-
-
         })
         res.json({results: newData})
         console.log("Reponse fetch providers tv:", newData)
