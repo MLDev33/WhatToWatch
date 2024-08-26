@@ -157,12 +157,16 @@ router.post('/addList/:token', (req, res) => {
     .then(data => {
       // console.log("data.user:", data.user)
       // res.json({ result: true, data: data});
+      // if(data){
+      //   data.created_list.push(req.body.list_id.toString())
+      //   data.save().then(()=> {
+      //     console.log("created_list de l'utilisateur:", data.created_list);
+      //     res.json({ result: true, list : data.populate("created_list")});
+      //   })
+      // }
       if(data){
-        data.created_list.push(req.body.list_id.toString())
-        data.save().then(()=> {
-          console.log("created_list de l'utilisateur:", data.created_list);
-          res.json({ result: true, list : data.populate("created_list")});
-        })
+        console.log("created_list de l'utilisateur:", data.created_list);
+        res.json({ result: true, list : data});
       }
       else{
         res.json({ result: false, error: "User not found"});
@@ -171,30 +175,26 @@ router.post('/addList/:token', (req, res) => {
 })
 
 // Route pour consulter les lists déjà existantes de l'utilisateur
-router.get('/lists/:token', (req, res) => {
-  try 
-  {
-    // Vérification de l'utilisateur
-    User.findOne({ token: req.params.token })
-      .then(data => {
-        if (User) {
-          
-          const userMovieLists = data.created_list.map((id) => {
-              let list = MovieList.findById(id)
-                .then(element => 
-                  console.log("userlist", element),
-                )
-                return list
-          })
-          console.log("userMovieLists:", userMovieLists)
-          res.json({ result: true, created_list : userMovieLists});
-          
-        }
-        else {
+router.get('/lists/:token', async (req, res) => {
 
-          res.json({ result: false, error: "User not found"});
-        }
-      })
+
+  try {
+    const user = await User.findOne({ token: req.params.token }).populate('created_list');
+    if (!user) {
+      return res.status(404).json({ success: false, message: "Utilisateur non trouvé" });
+    }
+
+    const listsMedia = user.created_list.map(list => ({
+      ...list.toObject(),
+    }));
+
+    console.log("lists:",listsMedia)
+
+    res.status(200).json({ 
+      success: true, 
+      listsMedia,
+      totallist: listsMedia.length
+    });
 
           
   } catch (error) {
