@@ -170,35 +170,22 @@ router.post('/addList/:token', (req, res) => {
 })
 
 // Route pour consulter les lists déjà existantes de l'utilisateur
-router.get('/created_list/:token', (req, res) => {
+router.get('/lists/:token', (req, res) => {
   try 
   {
-      // Vérification de l'utilisateur
-      User.findOne({ token: req.params.token.toString() });
-          if (User) {
-            res.json({ result: true, create_list : data.create_list});
-          }
-          else {
+    // Vérification de l'utilisateur
+    User.findOne({ token: req.params.token })
+      .then(data => {
+        if (User) {
+          res.json({ result: true, create_list : data});
+        }
+        else {
 
-            res.json({ result: false, error: "User not found"});
-          }
+          res.json({ result: false, error: "User not found"});
+        }
+      })
+
           
-      
-      // Récupération des lists de l'utilisateur  
-      // User.find({ token: req.params.token.toString()}).then(data => {
-      //     if (data) {
-      //         console.log('datalistfetch:', data)
-      //         res.json({ result: true, data: data});
-      //     } else {
-      //         res.json({ result: false, error: 'Medialists not found' });
-      //     }
-      // });
-
-
-
-
-
-
   } catch (error) {
       res.status(500).json({ success: false, message: "Erreur serveur", error: error.message });
   }
