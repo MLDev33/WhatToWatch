@@ -11,7 +11,11 @@ const API_KEY = process.env.API_KEY;
 const BASE_URL = 'https://api.themoviedb.org/3';
 
     function isEmpty(variable){
-        return variable === null || variable === undefined || variable === "" || array.length === 0 
+        return variable === null || variable === undefined || variable === "" || variable.length === 0 
+    }
+
+    function isArray(array){
+        return Array.isArray(array) || array.length === 0
     }
 
 // Route pour voir les lists de l'utilisateur
@@ -22,6 +26,40 @@ router.get('/get/:token', (req, res) => {
             res.json({result: true, userLists: data})
         })
 })
+
+async function getProviderDetails(type, id) {
+    const url = `${BASE_URL}/${type}/${id}/watch/providers?api_key=${API_KEY}`;
+    try {
+      const response = await fetch(url);
+      const data = await response.json();
+      //data contient results , avec une clé langue et une clé flatrate : {FR : {link : '', flatrate : []}}
+      //exemple de reponse pour friends ():
+      /*
+   "link": "https://www.themoviedb.org/tv/1668-friends/watch?locale=FR",
+        "flatrate": [
+          {
+            "logo_path": "/fksCUZ9QDWZMUwL2LgMtLckROUN.jpg",
+            "provider_id": 1899,
+            "provider_name": "Max",
+            "display_priority": 29
+          }
+        ]
+      */
+     //on recupere les plateformes de streaming sur lesquelles le contenu est disponible
+      const providers = data.results?.FR?.flatrate || [];
+      //on recupere le lien pour regarder le contenu
+      const link = data.results?.FR?.link || '';
+      return { providers, link };
+    } catch (error) {
+      console.error(`Error fetching provider details for ${type} with ID ${id}:`, error);
+      return { providers: [], link: '' };
+    }
+  }
+
+
+
+
+
 
 // Route pour sauvegarder les paramètres d'une liste à sa création
 router.post('/add/:token', async (req, res) => {
@@ -83,10 +121,9 @@ router.post('/add/:token', async (req, res) => {
     // 7 - Release date Lte
     router.post('/addMedia', (req,res) => {
 
-        //let types = ['Movie'];
     
         let {
-            types,
+            type,
             genres,
             isAdult, 
             isVideo, 
@@ -99,7 +136,8 @@ router.post('/add/:token', async (req, res) => {
             providers
         } = req.body
 
-        types = "movie";
+        type = "movie";
+
         let include_adult = isEmpty(isAdult) ? `&include_adult=${false}` : `&include_adult=${isAdult}`;
         let include_video = isEmpty(isVideo) ? `&include_video=${false}` : `&include_video=${isAdult}`;
         let languageChoice = isEmpty(language) ? `&language=${"fr-Fr"}` : `&language=${language}`;
@@ -111,23 +149,48 @@ router.post('/add/:token', async (req, res) => {
         let with_genres =  isEmpty(genres) ? `` : `&with_genres=${genres}`;
         let with_watch_providers =  isEmpty(providers) ? `` : `&with_watch_providers=${providers}`;
 
-        
+        let totalPages;
+        let totalResult;
 
         console.log("req.body:", req.body)
-        console.log("types", types)
+        console.log("types", type)
                     
         //const urlModulable = `https://api.themoviedb.org/3/discover/${types}?include_adult=${isAdult}&include_video=${isVideo}&language=${language}&page=${Number.parseInt(page)}&release_date.gte=${releaseDateGte.toString()}&release_date.lte=${releaseDateLte.toString()}&sort_by=${sortBy}&vote_average.gte=${average}&with_genres=${genres}&with_watch_providers=${providers}&api_key=${API_KEY}`;
-        const urlModulable = `https://api.themoviedb.org/3/discover/${types}?${include_adult}${include_video}${languageChoice}${pageSelect}${release_dateGte}${release_dateLte}${sort_by}${average}${with_genres}${with_watch_providers}&api_key=${API_KEY}`;
+        const urlModulable = `https://api.themoviedb.org/3/discover/${type}?${include_adult}${include_video}${languageChoice}${pageSelect}${release_dateGte}${release_dateLte}${sort_by}${vote_averageGte}${with_genres}${with_watch_providers}&api_key=${API_KEY}`;
 
         console.log("url", urlModulable)
 
         fetch(urlModulable)
             .then(response => response.json())
             .then(data => {
-                res.json({result: data})
+
+                const result =  data.results.map((item) => {
+                    return{
+                        type: type === 'movie' ? 'film' : 'série',
+                        titre: item.title || item.name,
+                        annee: releaseDateGte, // Date formatée au format YYYY-MM-DD
+                        description: item.overview,
+                        //genre: item.genre_ids ? item.genre_ids.map(id => type === 'movie' ? MOVIE_GENRE_NAMES[id] : TV_GENRE_NAMES[id]) : [],
+                        poster: item.poster_path,
+                        id: item.id,
+                        popularite: item.vote_average,
+                        vote: item.vote_count,
+                        // plateformes: providers.map(p => ({
+                        //   id: p.provider_id,
+                        //   nom: p.provider_name,
+                        //   logo: p.logo_path
+                        // })),
+                        //lien: link,
+                    }
+                })
+
+                totalPages = data.total_pages;
+                totalResult = data.total_results;
+                res.json({result: result})
                 console.log(data)
                 console.log(typeof page)
             });
     })
+
 
 module.exports = router;
