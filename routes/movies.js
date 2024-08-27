@@ -399,6 +399,71 @@ router.post('/like', async (req, res) => {
     res.status(500).json({ success: false, message: "Erreur serveur", error: error.message });
   }
 });
+
+//---------route pour unlike  (en cas de undo)----------//
+
+router.post('/unlike', async (req, res) => {
+  const { userToken, tmdbId, listToken } = req.body;
+
+  try {
+    // Vérification de l'utilisateur
+    const user = await User.findOne({ token: userToken });
+    if (!user) {
+      console.log("Utilisateur non trouvé");
+      return res.status(404).json({ success: false, message: "Utilisateur non trouvé" });
+    }
+
+    // Vérification de la validité de tmdbId
+    if (typeof tmdbId !== 'number') {
+      console.log("ID de média invalide");
+      return res.status(400).json({ success: false, message: "ID de média invalide" });
+    }
+
+    // Vérification si le média existe dans la collection Media
+    const media = await Media.findOne({ tmdbId: tmdbId });
+    if (!media) {
+      console.log("Média non trouvé");
+      return res.status(404).json({ success: false, message: "Média non trouvé" });
+    }
+
+    // Vérification si le média est dans les favoris de l'utilisateur
+    const mediaIndex = user.liked_movies.indexOf(media._id);
+    if (mediaIndex === -1) {
+      console.log("Média non trouvé dans les favoris");
+      return res.status(400).json({ success: false, message: "Média non trouvé dans les favoris" });
+    }
+
+    // Retrait du média des favoris de l'utilisateur
+    user.liked_movies.splice(mediaIndex, 1);
+
+    // Vérification si listToken existe, si oui on retire le média de la liste
+    if (listToken) {
+      const movieList = await MovieList.findOne({ token: listToken });
+      if (movieList) {
+        const likeEntryIndex = movieList.movie_liked.findIndex(entry => entry.movie_id.equals(media._id) && entry.liked_by.equals(user._id));
+        if (likeEntryIndex !== -1) {
+          movieList.movie_liked.splice(likeEntryIndex, 1);
+        }
+        const movieIndex = movieList.movies.indexOf(media._id);
+        if (movieIndex !== -1) {
+          movieList.movies.splice(movieIndex, 1);
+        }
+        await movieList.save();
+      }
+    }
+
+    await user.save();
+
+    console.log("Média retiré des favoris avec succès");
+    res.status(200).json({ success: true, message: "Média retiré des favoris" });
+  } catch (error) {
+    console.log("Erreur serveur:", error.message);
+    res.status(500).json({ success: false, message: "Erreur serveur", error: error.message });
+  }
+});
+
+
+
 //----------route pour voir les films et series likes par l'utilisateur----------//
 /*
 Route GET /user-likes :
