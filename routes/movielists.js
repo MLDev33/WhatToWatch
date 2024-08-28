@@ -164,28 +164,45 @@ router.post('/add/:token', async (req, res) => {
             .then(response => response.json())
             .then(data => {
 
-                const result =  data.results.map((item) => {
+                const listMedia =  data.results.map((item) => {
                     return{
-                        type: type === 'movie' ? 'film' : 'série',
-                        titre: item.title || item.name,
-                        annee: releaseDateGte, // Date formatée au format YYYY-MM-DD
-                        description: item.overview,
-                        //genre: item.genre_ids ? item.genre_ids.map(id => type === 'movie' ? MOVIE_GENRE_NAMES[id] : TV_GENRE_NAMES[id]) : [],
-                        poster: item.poster_path,
-                        id: item.id,
-                        popularite: item.vote_average,
-                        vote: item.vote_count,
-                        // plateformes: providers.map(p => ({
-                        //   id: p.provider_id,
-                        //   nom: p.provider_name,
-                        //   logo: p.logo_path
-                        // })),
-                        //lien: link,
+                        id : item.id,
+                                    // type: type === 'movie' ? 'film' : 'série',
+                                    // titre: item.title || item.name,
+                                    // annee: releaseDateGte, // Date formatée au format YYYY-MM-DD
+                                    // description: item.overview,
+                                    // //genre: item.genre_ids ? item.genre_ids.map(id => type === 'movie' ? MOVIE_GENRE_NAMES[id] : TV_GENRE_NAMES[id]) : [],
+                                    // poster: item.poster_path,
+                                    // id: item.id,
+                                    // popularite: item.vote_average,
+                                    // vote: item.vote_count,
+                                    // // plateformes: providers.map(p => ({
+                                    // //   id: p.provider_id,
+                                    // //   nom: p.provider_name,
+                                    // //   logo: p.logo_path
+                                    // // })),
+                                    // //lien: link,
                     }
                 })
 
+                MovieLists.movies.push(listMedia);
+
+                res.status(200).json({ 
+                    success: true, 
+                    listMedia,
+                    totalLikes: listMedia.length
+                  });
+
                 totalPages = data.total_pages;
                 totalResult = data.total_results;
+
+                // newMovieLists.save().then(newDoc => {
+                //     user.created_list.push(newDoc._id);
+                //     user.save()
+                //     console.log("user created_list:", user)
+                //     res.json({ result: true, movieLists: newDoc})
+                // })
+
                 res.json({result: result})
                 console.log(data)
                 console.log(typeof page)
