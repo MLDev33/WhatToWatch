@@ -153,13 +153,13 @@ router.get("/favouritePlatforms/:token", (req, res) => {
 
 // route to change password
 router.post("/updatePassword/:token", (req, res) => {
-  if (!checkBody(req.body, ["password", "verifyPassword", "confirmPassword"])) {
+  if (!checkBody(req.body, ["userpassword", "newPassword", "confirmNewPassword"])) {
     res.json({ result: false, error: "Missing or empty fields" });
     return;
   }
   User.findOne({ token: req.params.token }).then((data) => {
     if (data && bcrypt.compareSync(req.body.password, data.password)) {
-      const hash = bcrypt.hashSync(req.body.verifyPassword, 10);
+      const hash = bcrypt.hashSync(req.body.confirmNewPassword, 10);
       User.updateOne(
         { token: req.params.token },
         { password: hash },
@@ -181,13 +181,18 @@ router.post("/updatePassword/:token", (req, res) => {
   });
 
   //route to update email // token as params
-  router.post("/updateEmail/:token", (req, res) => {
-    if (!checkBody(req.body, ["newEmail"])) {
+  router.post("/updateEmail/:token", async(req, res) => {
+    if (!checkBody(req.body, ["email"])) {
       res.json({ result: false, error: "Missing or empty field" });
       return;
     }
-    const email = req.body.newEmail;
-  if (!email) {
+    const userByEmail = await User.findOne({ email: req.body.email })
+      if (userByEmail !== null) {
+        res.json({ result: false, error: "Email already exists" });
+        return;
+      }
+    const newEmail = req.body.email;
+  if (!newEmail) {
     return res.status(400).json({ result: false, error: "New Email is required" });
   }
   User.findOneAndUpdate(
@@ -208,12 +213,19 @@ router.post("/updatePassword/:token", (req, res) => {
 });
   
  //route to update username // token as params
-router.post("/updateUsername/:token", (req, res) => {
-  if (!checkBody(req.body, ["newUsername"])) {
+router.post("/updateUsername/:token", async(req, res) => {
+  if (!checkBody(req.body, ["username"])) {
     res.json({ result: false, error: "Missing or empty field" });
     return;
   }
-  const username = req.body.newUsername;
+  //checking if username is already taken
+  const userByUsername = await User.findOne({ username: req.body.username })
+  
+  if (userByUsername !== null) {
+    res.json({ result: false, error: "Username already exists" });
+    return;
+  }
+  const newUsername = req.body.username;
 if (!newUsername) {
   return res.status(400).json({ result: false, error: "New Username is required" });
 }
@@ -224,10 +236,12 @@ User.findOneAndUpdate(
 )
   .then((data) => {
     if (data) {
+      console.log(data.username)
       res.json({ result: true, username: data.username });
     } else {
       res.json({ result: false, error: "User not found" });
     }
+    console.log(data.username)
   })
   .catch((err) => {
     res.status(500).json({ result: false, error: err.message });
