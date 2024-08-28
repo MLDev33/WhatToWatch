@@ -13,7 +13,7 @@ const movieListSchema = mongoose.Schema({
             average: String, // Ajout au schema initial
         }
     ],
-    movies: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Media' }],
+    movies: Array, //[{ type: mongoose.Schema.Types.ObjectId, ref: 'Media' }],
     movie_liked: [{
         movie_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Media' },
         liked_by: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
