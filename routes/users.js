@@ -75,6 +75,44 @@ router.post("/signup", (req, res) => {
       });
     });
 
+    //route signup // as explained below, in the previous route, which is called one level up, we have already checked if username or email have been used, so no need to do it twice
+router.post("/signupWithGoogle", (req, res) => {
+  if (!checkBody(req.body, ["username", "email"])) {
+    res.json({ result: false, error: "Missing or empty fields" });
+    return;
+  }
+  // we have already checked if the user or email already exist, no need to check again
+  // Vérifier si le nom d'utilisateur existe déjà 
+  // User.findOne({ username: req.body.username }).then((userByUsername) => {
+  //   if (userByUsername !== null) {
+  //     res.json({ result: false, error: "Username already exists" });
+  //     return;
+  //   }
+  //   // Vérifier si l'email existe déjà
+  //   User.findOne({ email: req.body.email }).then((userByEmail) => {
+  //     if (userByEmail !== null) {
+  //       res.json({ result: false, error: "Email already exists" });
+  //       return;
+  //     }
+
+      // Si le nom d'utilisateur et l'email n'existent pas, créer un nouvel utilisateur
+      const newUser = new User({
+        token: uid2(32),
+        username: req.body.username,
+        email: req.body.email,
+        favouritePlatforms: req.body.favouritePlatforms,
+        avatar: "",
+      });
+      console.log(req.body);
+      newUser.save().then((newDoc) => {
+        res.json({
+          result: true,
+          token: newDoc.token,
+          username: newDoc.username,
+        });
+      });
+    });
+
 //update userDocument by adding avatar 
 router.post("/avatar/:token", (req, res) => {
   const avatar = req.body.avatar;
@@ -98,7 +136,7 @@ router.post("/avatar/:token", (req, res) => {
     });
 });
 
-//route signIn - tBC - check if we have to send platforms as login stopped working 
+//route signIn 
 router.post("/signin", (req, res) => {
   if (!checkBody(req.body, ["username", "password"])) {
     res.json({ result: false, error: "Missing or empty fields" });
@@ -107,6 +145,23 @@ router.post("/signin", (req, res) => {
 
   User.findOne({ username: req.body.username }).then((data) => {
     if (data && bcrypt.compareSync(req.body.password, data.password)) {
+      res.json({ result: true, token: data.token, email: data.email });
+      console.log(data);
+    } else {
+      res.json({ result: false, error: "User not found or wrong password" });
+    }
+  });
+});
+
+//route signIn with Google //no pw
+router.post("/signinWithGoogle", (req, res) => {
+  if (!checkBody(req.body, ["username"])) {
+    res.json({ result: false, error: "Missing or empty fields" });
+    return;
+  }
+
+  User.findOne({ username: req.body.username }).then((data) => {
+    if (data) {
       res.json({ result: true, token: data.token, email: data.email });
       console.log(data);
     } else {
