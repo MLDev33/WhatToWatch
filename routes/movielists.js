@@ -119,8 +119,8 @@ async function addMedia(filters) {
     } = filters
 
     type = "movie";
-    genres =  isEmpty(genres) ? "" : list.genres.map(genre => {return genre.id }).slice(",").join("|");
-    providers =  isEmpty(providers) ? "" : providers.lenght === 1 ? providers[0].toString() : list.providers.slice(",").join("|");
+    genres =  isEmpty(genres) ? "" : genres.map(genre => {return genre.id }).slice(",").join("|");
+    providers =  isEmpty(providers) ? "" : providers.lenght === 1 ? providers[0].toString() : providers.slice(",").join("|");
     rating =  isEmpty(rating) ? "" : Number.parseInt(rating);
 
 
