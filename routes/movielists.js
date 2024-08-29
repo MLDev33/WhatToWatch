@@ -28,45 +28,16 @@ router.get('/get/:token', (req, res) => {
 })
 
 // Route pour voir les lists de l'utilisateur
-router.get('/get/listMedia/:token', (req, res) => {
-    MovieLists.find({ token: req.params.token.toString() })
-        .then(data => {
-            console.log("lists:", data);
-            res.json({ result: true, userLists: data })
-        })
+router.get('/get/media/:id', async (req, res) => {
+
+    const listMedia = await MovieLists.find({ _id: req.params.id})
+  
+    console.log("movie result:", listMedia)
+
+    res.json({result: true, movies: listMedia})
+    
+    
 })
-
-async function getProviderDetails(type, id) {
-    const url = `${BASE_URL}/${type}/${id}/watch/providers?api_key=${API_KEY}`;
-    try {
-        const response = await fetch(url);
-        const data = await response.json();
-        //data contient results , avec une clé langue et une clé flatrate : {FR : {link : '', flatrate : []}}
-        //exemple de reponse pour friends ():
-        /*
-     "link": "https://www.themoviedb.org/tv/1668-friends/watch?locale=FR",
-          "flatrate": [
-            {
-              "logo_path": "/fksCUZ9QDWZMUwL2LgMtLckROUN.jpg",
-              "provider_id": 1899,
-              "provider_name": "Max",
-              "display_priority": 29
-            }
-          ]
-        */
-        //on recupere les plateformes de streaming sur lesquelles le contenu est disponible
-        const providers = data.results?.FR?.flatrate || [];
-        //on recupere le lien pour regarder le contenu
-        const link = data.results?.FR?.link || '';
-        return { providers, link };
-    } catch (error) {
-        console.error(`Error fetching provider details for ${type} with ID ${id}:`, error);
-        return { providers: [], link: '' };
-    }
-}
-
-
-
 
 
 
@@ -94,7 +65,7 @@ router.post('/add/:token', async (req, res) => {
                             genre: req.body.genres,
                             streaming_platform: req.body.providers,
                             // average, releaseDateGte et ReleaseDateLte à rajouter au schema initial de movielists
-                            // average: Number.parseInt(req.body.rating),
+                            average: req.body.rating,
                             // releaseDateGte: req.body.releaseDateGte,
                             // releaseDateLte: req.body.releaseDateLte,
                         },
@@ -106,6 +77,7 @@ router.post('/add/:token', async (req, res) => {
                         user.created_list.push(newDoc._id);
                         user.save()
                         console.log("user created_list:", user)
+                        console.log("movies:", movieslists)
                         res.json({ result: true, movieLists: newDoc })
                     })
                 }
@@ -147,6 +119,10 @@ async function addMedia(filters) {
     } = filters
 
     type = "movie";
+    genres =  isEmpty(genres) ? "" : list.genres.map(genre => {return genre.id }).slice(",").join("|");
+    providers =  isEmpty(providers) ? "" : providers.lenght === 1 ? providers[0].toString() : list.providers.slice(",").join("|");
+    rating =  isEmpty(rating) ? "" : Number.parseInt(rating);
+
 
     let include_adult = isEmpty(isAdult) ? `&include_adult=${false}` : `&include_adult=${isAdult}`;
     let include_video = isEmpty(isVideo) ? `&include_video=${false}` : `&include_video=${isAdult}`;
