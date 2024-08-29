@@ -155,14 +155,14 @@ router.post("/signin", (req, res) => {
 
 //route signIn with Google //no pw
 router.post("/signinWithGoogle", (req, res) => {
-  if (!checkBody(req.body, ["username"])) {
+  if (!checkBody(req.body, ["email"])) {
     res.json({ result: false, error: "Missing or empty fields" });
     return;
   }
 
-  User.findOne({ username: req.body.username }).then((data) => {
+  User.findOne({ email: req.body.email }).then((data) => {
     if (data) {
-      res.json({ result: true, token: data.token, email: data.email });
+      res.json({ result: true, token: data.token, username: data.username });
       console.log(data);
     } else {
       res.json({ result: false, error: "User not found or wrong password" });
