@@ -34,7 +34,7 @@ router.get('/get/media/:id', async (req, res) => {
   
     console.log("movie result:", listMedia)
 
-    res.json({result: true, movies: listMedia})
+    res.json({result: true, listMedia: listMedia})
     
     
 })
