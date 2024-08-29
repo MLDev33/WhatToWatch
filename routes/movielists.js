@@ -121,7 +121,7 @@ async function addMedia(filters) {
     type = "movie";
     genres =  isEmpty(genres) ? "" : genres.map(genre => {return genre.id }).slice(",").join("|");
     providers =  isEmpty(providers) ? "" : providers.lenght === 1 ? providers[0].toString() : providers.slice(",").join("|");
-    rating =  isEmpty(rating) ? "" : Number.parseInt(rating);
+    average =  isEmpty(average) ? "" : Number.parseInt(average);
 
 
     let include_adult = isEmpty(isAdult) ? `&include_adult=${false}` : `&include_adult=${isAdult}`;
