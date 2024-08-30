@@ -192,6 +192,28 @@ router.delete("/:token", (req, res) => {
   });
 });
 
+//route to delete account with Google / delete account by username as no pw given for googlesignup
+router.delete("/deleteWithGoogle/:token", (req, res) => {
+  User.findOne({ token: req.params.token }).then((data) => {
+    if (data && (req.body.username === data.username)) {
+      User.deleteOne({
+        token: req.params.token,
+      }).then((deletedDoc) => {
+        if (deletedDoc.deletedCount > 0) {
+          User.find().then((data) => {
+            res.json({ result: true, token: data.token });
+          })
+        } else {
+          res.json({ result: false, error: "User not found" });
+        }
+      }
+    )
+    } else {
+      res.json({ result: false, error: "Wrong password" });
+    }
+  });
+});
+
 //route user pour recuperer les plateformes favorites de l'utilisateur et faire un use effect dans home avec les données
 router.get("/favouritePlatforms/:token", (req, res) => {
   User.findOne({
@@ -213,13 +235,13 @@ router.post("/updatePassword/:token", (req, res) => {
     return;
   }
   User.findOne({ token: req.params.token }).then((data) => {
-    if (data && bcrypt.compareSync(req.body.password, data.password)) {
+    if (data && bcrypt.compareSync(req.body.userpassword, data.password)) {
       const hash = bcrypt.hashSync(req.body.confirmNewPassword, 10);
       User.updateOne(
         { token: req.params.token },
         { password: hash },
         { new: true }
-      )
+      ) 
       .then((data) => {
         if (data) {
           res.json({ result: true, token: data.token });
@@ -230,9 +252,12 @@ router.post("/updatePassword/:token", (req, res) => {
       .catch((err) => {
         res.status(500).json({ result: false, error: err.message });
       });
-    } else {
+    } 
+    else {
       res.json({ result: false, error: "User not found" });
-    }})
+      console.log('No')
+    }
+})
   });
 
   //route to update email // token as params
