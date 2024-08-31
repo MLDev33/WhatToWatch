@@ -5,20 +5,37 @@ const MovieLists = require('../models/movielists');
 const User = require('../models/users');
 const Media = require('../models/media.js');
 const { checkBody } = require('../modules/checkBody');
-const { getIdGenresByType } = require('../modules/IdGenresByType.js');
 
 const API_KEY = process.env.API_KEY;
 const BASE_URL = 'https://api.themoviedb.org/3';
 
+/**
+ * Fonction qui vérifie si le paramètre est vide ou pas
+ * 
+ * @param {(number|boolean|string|[]|{})} variable 
+ * @returns true | false
+ */
 function isEmpty(variable) {
     return variable === null || variable === undefined || variable === "" || variable.length === 0
 }
 
+
+/**
+ * Fonction qui vérifie si le paramètre est un array ou s'il est vide
+ * 
+ * @param {*} array 
+ * @returns retur true | false
+ */
 function isArray(array) {
     return Array.isArray(array) || array.length === 0
 }
 
-// Route pour voir les lists de l'utilisateur
+/**
+ * Route pour voir les lists de l'utilisateur avec son token
+ * 
+ * @param { string } token
+ * 
+ */
 router.get('/get/:token', (req, res) => {
     MovieLists.find({ token: req.params.token.toString() })
         .then(data => {
@@ -27,7 +44,13 @@ router.get('/get/:token', (req, res) => {
         })
 })
 
-// Route pour voir les lists de l'utilisateur
+
+/**
+ * Route pour voir les lists de l'utilisateur avec l'id de la list
+ * 
+ * @param { string } _id list
+ * 
+ */
 router.get('/get/media/:id', async (req, res) => {
 
     const listMedia = await MovieLists.find({ _id: req.params.id})
@@ -41,7 +64,13 @@ router.get('/get/media/:id', async (req, res) => {
 
 
 
-// Route pour sauvegarder les paramètres d'une liste à sa création
+/**
+ * Route pour sauvegarder les paramètres d'une liste à sa création
+ * Puis
+ * 
+ * @param { token }
+ * 
+ */
 router.post('/add/:token', async (req, res) => {
 
     try {
@@ -51,6 +80,7 @@ router.post('/add/:token', async (req, res) => {
             return res.status(404).json({ success: false, message: "Utilisateur non trouvé" });
         }
 
+        // crée une movieList en sauvegardant les paramètres de la liste
         User.findOne({ token: req.params.token.toString() })
             .then(async data => {
                 if (data) {
@@ -92,15 +122,20 @@ router.post('/add/:token', async (req, res) => {
 })
 
 
-// Route qui propose des media à l'utilisateur selon les critères de sa liste
-//Paramètres de la liste définie dans la page liste de l'application
-// 1 - Name
-// 2 - Type: Movie ou serie
-// 3 - Genres
-// 4 - Minimum rating
-// 5 - Streaming platforms
-// 6 - Release date Gte
-// 7 - Release date Lte
+/**
+ * Fonction qui propose des medias à l'utilisateur selon les critères selectionnés
+ * en paramètres dans l'application :
+ * 1 - Name
+ * 2 - Type: Movie ou serie
+ * 3 - Genres
+ * 4 - Minimum rating
+ * 5 - Streaming platforms
+ * 6 - Release date Gte
+ * 7 - Release date Lte
+ * 
+ * @param {(number|boolean|string|[]|{})} filters 
+ * @returns un tableau d'objets contenant les media proposés à l'utilisateurs
+ */
 async function addMedia(filters) {
 
 
@@ -148,6 +183,8 @@ async function addMedia(filters) {
 
     const response = await fetch(urlModulable)
     const data = await response.json()
+
+    console.log("DATA", data)
 
     const listMedia = data.results.map((item) => {
         return {
