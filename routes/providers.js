@@ -51,12 +51,34 @@ async function getTvProviders(list) {
 
     console.log("DATA TV", data, "lengt tv:", data.results.length)
 
+    const idProvidersSet = new Set();
+    
+    //récupérer les id de la list des provider des media de type movie
+    list.map((item) => {
+        idProvidersSet.add(item.provider_id)
+    })
+    console.log("id list:", idProvidersSet)
+
     const listTvProviders = data.results.map((item) => {
-        list.push({
-            provider_id: item.provider_id,
-            provider_name: item.provider_name,
-            provider_logo: item.logo_path,
-        })
+
+        if(idProvidersSet.has(item.provider_id)){
+            console.log("doublons", item.provider_name)
+        }
+        else{
+            list.push({
+                provider_id: item.provider_id,
+                provider_name: item.provider_name,
+                provider_logo: item.logo_path,
+                type: ["tv",]
+            })
+        }
+
+
+        // list.push({
+        //     provider_id: item.provider_id,
+        //     provider_name: item.provider_name,
+        //     provider_logo: item.logo_path,
+        // })
     })
     
     console.log("lengt tv:", list.length, "DATA ALL", list)
