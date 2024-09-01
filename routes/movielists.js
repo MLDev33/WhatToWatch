@@ -189,25 +189,46 @@ async function addMedia(filters) {
     let contenu = [];
 
     const listMedia = data.results.map((item) => {
+        type = item.media_type === 'movie' ? 'movie' : 'tv';
+        const releaseDate = moment(item.release_date || item.first_air_date).format('YYYY-MM-DD');
 
         return {
-            id: item.id,
 
+            id: item.id,
             type: type === 'movie' ? 'film' : 'série',
             titre: item.title || item.name,
-            annee: releaseDateGte, // Date formatée au format YYYY-MM-DD
-            description: item.overview,
-            //genre: item.genre_ids ? item.genre_ids.map(id => type === 'movie' ? MOVIE_GENRE_NAMES[id] : TV_GENRE_NAMES[id]) : [],
             poster: item.poster_path,
-            id: item.id,
+            genre: "#MODIF#",
+            annee: releaseDateGte,
+            description: item.overview,
             popularite: item.vote_average,
-            vote: item.vote_count,
-            // plateformes: providers.map(p => ({
-            //   id: p.provider_id,
-            //   nom: p.provider_name,
-            //   logo: p.logo_path
-            // })),
-            //lien: link,
+            vote:item.vote_count,
+            // providers: [{
+            //     providerId: Number,
+            //     providerName: String,
+            //     logoPath: String
+            //   }],
+            // link: String
+
+
+
+            // id: item.id,
+
+            // type: type === 'movie' ? 'film' : 'série',
+            // titre: item.title || item.name,
+            // annee: releaseDateGte, // Date formatée au format YYYY-MM-DD
+            // description: item.overview,
+            // //genre: item.genre_ids ? item.genre_ids.map(id => type === 'movie' ? MOVIE_GENRE_NAMES[id] : TV_GENRE_NAMES[id]) : [],
+            // poster: item.poster_path,
+            // id: item.id,
+            // popularite: item.vote_average,
+            // vote: item.vote_count,
+            // // plateformes: providers.map(p => ({
+            // //   id: p.provider_id,
+            // //   nom: p.provider_name,
+            // //   logo: p.logo_path
+            // // })),
+            // //lien: link,
         }
     })
 
