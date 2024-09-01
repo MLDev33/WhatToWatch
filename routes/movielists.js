@@ -55,7 +55,7 @@ router.get('/get/media/:id', async (req, res) => {
 
     const listMedia = await MovieLists.find({ _id: req.params.id})
   
-    console.log("movie result:", listMedia)
+    console.log("movie result:", listMedia.movie)
 
     res.json({result: true, listMedia: listMedia})
     
@@ -190,7 +190,7 @@ async function addMedia(filters) {
 
     const listMedia = data.results.map((item) => {
 
-        contenu.push({
+        return {
             id: item.id,
 
             type: type === 'movie' ? 'film' : 'série',
@@ -208,30 +208,7 @@ async function addMedia(filters) {
             //   logo: p.logo_path
             // })),
             //lien: link,
-        })
-
-        return contenu
-
-
-        // return {
-        //     id: item.id,
-
-        //     type: type === 'movie' ? 'film' : 'série',
-        //     titre: item.title || item.name,
-        //     annee: releaseDateGte, // Date formatée au format YYYY-MM-DD
-        //     description: item.overview,
-        //     //genre: item.genre_ids ? item.genre_ids.map(id => type === 'movie' ? MOVIE_GENRE_NAMES[id] : TV_GENRE_NAMES[id]) : [],
-        //     poster: item.poster_path,
-        //     id: item.id,
-        //     popularite: item.vote_average,
-        //     vote: item.vote_count,
-        //     // plateformes: providers.map(p => ({
-        //     //   id: p.provider_id,
-        //     //   nom: p.provider_name,
-        //     //   logo: p.logo_path
-        //     // })),
-        //     //lien: link,
-        // }
+        }
     })
 
     return listMedia
