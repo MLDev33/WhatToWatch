@@ -54,13 +54,19 @@ router.get('/get/:token', (req, res) => {
  */
 router.get('/get/media/:id', async (req, res) => {
 
-    const listMedia = await MovieLists.find({ _id: req.params.id})
-  
-    console.log("movie result:", listMedia.movie)
+    try{
+        const listMedia = await MovieLists.find({ _id: req.params.id})
+        if (!MovieLists) {
+            return res.status(404).json({ success: false, message: "List non trouvée" });
+          }
 
-    res.json({result: true, listMedia: listMedia})
-    
-    
+        console.log("movie result:", listMedia.movie)
+        res.status (200).json({ success: true, listMedia })
+
+    }catch(error){
+        console.error('Error occurred:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
 })
 
 
@@ -109,11 +115,11 @@ router.post('/add/:token', async (req, res) => {
                         user.save()
                         console.log("user created_list:", user)
                         console.log("movies:", movieslists)
-                        res.json({ result: true, movieLists: newDoc })
+                        res.status(200).json({ result: true, result: newDoc }) //movieLists
                     })
                 }
                 else {
-                    res.json({ result: false, error: "User not found or name already exist" });
+                    res.status(400).json({ result: false, error: "User not found or name already exist" });
                 }
             });
 
@@ -190,18 +196,19 @@ async function addMedia(filters) {
     let contenu = [];
 
     const listMedia = data.results.map((item) => {
-        type = item.media_type === 'movie' ? 'movie' : 'tv';
+        //type = item.media_type === 'movie' ? 'movie' : 'tv';
         const releaseDate = moment(item.release_date || item.first_air_date).format('YYYY-MM-DD');
 
         return {
 
-            id: item.id,
+
             type: type === 'movie' ? 'film' : 'série',
             titre: item.title || item.name,
-            poster: item.poster_path,
-            genre: "#MODIF#",
             annee: releaseDateGte,
             description: item.overview,
+            genre: "Data a traiter en Db",
+            poster: item.poster_path,
+            id: item.id,
             popularite: item.vote_average,
             vote:item.vote_count,
             // providers: [{
@@ -234,8 +241,67 @@ async function addMedia(filters) {
     })
 
     return listMedia
-
 }
 
+
+
+
+router.delete("delete/:id/:token", async (req, res) => {
+
+    try {
+        // Vérification de l'utilisateur
+        const user = await User.findOne({ token: req.params.token });
+        if (!user) {
+            return res.status(404).json({ success: false, message: "Utilisateur non trouvé" });
+        }
+
+
+        MovieLists.findOne({ _id: req.params.id, creator: req.params.token }).then((data) => {
+            if (data) {
+              MovieLists.deleteOne({
+                _id: req.params.id,
+              }).then((deletedDoc) => {
+                if (deletedDoc.deletedCount > 0) {
+                  MovieLists.find().then((data) => {
+                    res.status(200).json({ result: true, token: data.id });
+                  })
+                } else {
+                  res.status(400).json({ result: false, error: "MovieList not found" });
+                }
+              }
+            )
+            } else {
+              res.status(500).json({ success: false, message: "Erreur serveur", error: error.message });
+            }
+          });
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Erreur serveur", error: error.message });
+    }
+
+ 
+  });
+
+router.get('/get/:token/:id', async(req, res) => {
+
+        try{
+            MovieLists.findById(req.params.id)
+                .then(data => {
+                    if(data.creator.toString === req.params.id.toString){
+                        console.log(" result show:", data.creator)
+                        res.status (200).json({ success: true, result: data })
+                    }
+                    else{
+                        return res.status(404).json({ result: false, error: "List non trouvée pour cet utilisateur" });
+                    }
+                })
+              
+        }catch(error){
+            console.error('Error occurred:', error);
+            res.status(500).json({ success: false, message: error.message });
+        }
+
+
+
+})
 
 module.exports = router;

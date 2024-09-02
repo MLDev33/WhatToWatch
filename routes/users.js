@@ -150,30 +150,6 @@ router.get("/favouritePlatforms/:token", (req, res) => {
 });
 
 
-// Route mettre à jour les lists créées par l'utilisateur
-// update created_list from user
-router.post('/addList/:token', (req, res) => {
-  User.findOne({token: req.params.token })
-    .then(data => {
-      // console.log("data.user:", data.user)
-      // res.json({ result: true, data: data});
-      // if(data){
-      //   data.created_list.push(req.body.list_id.toString())
-      //   data.save().then(()=> {
-      //     console.log("created_list de l'utilisateur:", data.created_list);
-      //     res.json({ result: true, list : data.populate("created_list")});
-      //   })
-      // }
-      if(data){
-        console.log("created_list de l'utilisateur:", data.created_list);
-        res.json({ result: true, list : data});
-      }
-      else{
-        res.json({ result: false, error: "User not found"});
-      }
-    })
-})
-
 // Route pour consulter les lists déjà existantes de l'utilisateur
 router.get('/lists/:token', async (req, res) => {
 
@@ -202,5 +178,30 @@ router.get('/lists/:token', async (req, res) => {
       res.status(500).json({ success: false, message: "Erreur serveur", error: error.message });
   }
 })
+
+
+// Route mettre à jour les lists créées par l'utilisateur
+// // update created_list from user
+// router.post('/addList/:token', (req, res) => {
+//   User.findOne({token: req.params.token })
+//     .then(data => {
+//       // console.log("data.user:", data.user)
+//       // res.json({ result: true, data: data});
+//       // if(data){
+//       //   data.created_list.push(req.body.list_id.toString())
+//       //   data.save().then(()=> {
+//       //     console.log("created_list de l'utilisateur:", data.created_list);
+//       //     res.json({ result: true, list : data.populate("created_list")});
+//       //   })
+//       // }
+//       if(data){
+//         console.log("created_list de l'utilisateur:", data.created_list);
+//         res.json({ result: true, list : data});
+//       }
+//       else{
+//         res.json({ result: false, error: "User not found"});
+//       }
+//     })
+// })
 
 module.exports = router;

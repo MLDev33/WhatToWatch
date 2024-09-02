@@ -53,7 +53,7 @@ async function getTvProviders(list) {
 
     const idProvidersSet = new Set();
     
-    //récupérer les id de la list des provider des media de type movie
+    //récupérer les id de la list des providers des media de type movie
     list.map((item) => {
         idProvidersSet.add(item.provider_id)
     })
