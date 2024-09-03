@@ -161,6 +161,7 @@ async function addMedia(filters) {
     } = filters
 
     type = "movie";
+    genresData = genres;
     genres =  isEmpty(genres) ? "" : genres.map(genre => {return genre.id }).slice(",").join("|");
     providers =  isEmpty(providers) ? "" : providers.lenght === 1 ? providers[0].toString() : providers.slice(",").join("|");
     average =  isEmpty(average) ? "" : Number.parseInt(average);
@@ -198,6 +199,15 @@ async function addMedia(filters) {
     const listMedia = data.results.map((item) => {
         //type = item.media_type === 'movie' ? 'movie' : 'tv';
         const releaseDate = moment(item.release_date || item.first_air_date).format('YYYY-MM-DD');
+        const genresName = [];
+        item.genre_ids.map((genreId) => {
+            for(let i = 0; i < genresData.lenght; i++){
+                if(genresData[i].id === genreId){
+                    genresName.push(genresData[i].name)
+                }
+            }
+
+        })
 
         return {
 
@@ -206,7 +216,7 @@ async function addMedia(filters) {
             titre: item.title || item.name,
             annee: releaseDateGte,
             description: item.overview,
-            genre: "Data a traiter en Db",
+            genre: genresName.join(","),
             poster: item.poster_path,
             id: item.id,
             popularite: item.vote_average,
