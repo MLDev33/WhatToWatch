@@ -6,6 +6,7 @@ const User = require('../models/users');
 const Media = require('../models/media.js');
 const { checkBody } = require('../modules/checkBody');
 const { getProviderDetails } = require('../modules/getProviderDetails.js')
+const { fetchPaginatedData } = require('../modules/fetchPagination.js')
 const moment = require('moment');
 
 const API_KEY = process.env.API_KEY;
@@ -155,7 +156,7 @@ async function addMedia(filters) {
 
 
     let {
-        types,
+        types, // req.body.types "ATTENTION" Pour tuiliser la valeur mettre ne pas oublier le "s"
         genres,
         isAdult,
         isVideo,
@@ -168,8 +169,7 @@ async function addMedia(filters) {
         providers
     } = filters
 
-    genresData = genres;
-    let type = types[0].toLowerCase();
+    let type = "movie"; // variable overrride => pb d'utilisation de Promise.all([ , ])
     genres = isEmpty(genres) ? "" : genres.map(genre => { return genre.id }).slice(",").join("|");
     providers = isEmpty(providers) ? "" : providers.lenght === 1 ? providers[0].toString() : providers.slice(",").join("|");
     average = isEmpty(average) ? "" : Number.parseInt(average);
@@ -186,41 +186,25 @@ async function addMedia(filters) {
     let with_genres = isEmpty(genres) ? `` : `&with_genres=${genres}`;
     let with_watch_providers = isEmpty(providers) ? `` : `&with_watch_providers=${providers}`;
 
-    let totalPages;
-    let totalResult;
-
-    //console.log("req.body:", req.body.types)
-    console.log("types", filters.types)
-
-    //Mémo url dicover de TMDB qui a été personnalisé avec les variables en paamètres :
+    //console.log("req.body:", req.body)
+    //console.log("types", type)
 
     //const urlModulable = `https://api.themoviedb.org/3/discover/${types}?include_adult=${isAdult}&include_video=${isVideo}&language=${language}&page=${Number.parseInt(page)}&release_date.gte=${releaseDateGte.toString()}&release_date.lte=${releaseDateLte.toString()}&sort_by=${sortBy}&vote_average.gte=${average}&with_genres=${genres}&with_watch_providers=${providers}&api_key=${API_KEY}`;
     const urlModulable = `https://api.themoviedb.org/3/discover/${type}?${include_adult}${include_video}${languageChoice}${pageSelect}${release_dateGte}${release_dateLte}${sort_by}${vote_averageGte}${with_genres}${with_watch_providers}&api_key=${API_KEY}`;
-    //const urlFetchTV = `https://api.themoviedb.org/3/discover/tv?${include_adult}${include_video}${languageChoice}${pageSelect}${release_dateGte}${release_dateLte}${sort_by}${vote_averageGte}${with_genres}${with_watch_providers}&api_key=${API_KEY}`;
-    //console.log("url", urlModulable)
 
-
-    // if (types.length === 1 && types[0] === "Movie") {
-    //     const response = await fetch(urlFetchMovie)
-    //     //const response = await Promise.all([urlfetchMovie, urlFetchTV]) 
-    // }
-    // else if (types.length === 1 && types[0] === "TV") {
-    //     const response = await fetch(urlFetchTV)
-    // }
+    console.log("url", urlModulable)
 
     const response = await fetch(urlModulable)
     const data = await response.json()
 
-    console.log("DATA", response)
+    console.log("DATA", data)
 
     let contenu = [];
 
     const listMedia = data.results.map((item) => {
-        //type = item.media_type === 'movie' ? 'movie' : 'tv';
         const releaseDate = moment(item.release_date || item.first_air_date).format('YYYY-MM-DD');
 
         return {
-
             type: item.type === 'movie' ? 'Film' : 'Série',
             titre: item.title || item.name,
             annee: releaseDateGte,
@@ -238,10 +222,8 @@ async function addMedia(filters) {
             // link: link,
         }
     })
-
     return listMedia
 }
-
 
 
 
