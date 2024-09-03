@@ -97,7 +97,7 @@ router.post('/add/:token', async (req, res) => {
         User.findOne({ token: req.params.token.toString() })
             .then(async data => {
                 if (data) {
-                    const movieslists = await addMedia(req.body)
+                    const movieslists = await addMediaMovies(req.body)
                     const newMovieLists = new MovieLists({
                         token: data.token,
                         list_name: req.body.list_name,
@@ -150,7 +150,7 @@ router.post('/add/:token', async (req, res) => {
  * @param {(number|boolean|string|[]|{})} filters 
  * @returns un tableau d'objets contenant les media proposés à l'utilisateurs
  */
-async function addMedia(filters) {
+async function addMediaMovies(filters) {
 
 
     let {
@@ -199,11 +199,10 @@ async function addMedia(filters) {
 
     let contenu = [];
 
-    const listMedia = data.results.map(async (item) => {
-        const movieId = item.id;
-        const releaseDateGte = moment(item.release_date || item.first_air_date).format('YYYY-MM-DD');
-
+    const listMedia = data.results.map((item) => {
+        //const movieId = item.id;
         //const { listProviders, watchLink } = await getMoviesProviders(movieId, BASE_URL, API_KEY)
+        const releaseDateGte = moment(item.release_date || item.first_air_date).format('YYYY-MM-DD');
 
         return {
             type: item.type === 'movie' ? 'Film' : 'Série',
@@ -223,7 +222,7 @@ async function addMedia(filters) {
             // link: watchLink,
         }
     })
-    console.log("listMedia:", listMedia)
+    console.log("data:", data);
     return listMedia
 }
 
