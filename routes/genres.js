@@ -8,6 +8,7 @@ const BASE_URL = 'https://api.themoviedb.org/3';
 const language = "fr" // ou req.params.language;
 let genreMovie = [];
 let genreTV = [];
+let allGenres = [];
 
 router.get('/get/movie', (req, res) => {
 

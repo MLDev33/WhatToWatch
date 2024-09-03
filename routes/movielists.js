@@ -5,10 +5,17 @@ const MovieLists = require('../models/movielists');
 const User = require('../models/users');
 const Media = require('../models/media.js');
 const { checkBody } = require('../modules/checkBody');
+const { getProviderDetails } = require('../modules/getProviderDetails.js')
 const moment = require('moment');
 
 const API_KEY = process.env.API_KEY;
 const BASE_URL = 'https://api.themoviedb.org/3';
+
+const VALID_MOVIE_GENRES = [28, 12, 16, 35, 80, 99, 18, 10751, 14, 36, 27, 10402, 9648, 10749, 878, 10770, 53, 10752, 37];
+const VALID_TV_GENRES = [10759, 16, 35, 80, 99, 18, 10751, 10762, 9648, 10763, 10764, 10765, 10766, 10767, 10768, 37];
+const MOVIE_GENRE_NAMES = { 28: 'Action', 12: 'Adventure', 16: 'Animation', 35: 'Comedy', 80: 'Crime', 99: 'Documentary', 18: 'Drama', 10751: 'Family', 14: 'Fantasy', 36: 'History', 27: 'Horror', 10402: 'Music', 9648: 'Mystery', 10749: 'Romance', 878: 'Science Fiction', 10770: 'TV Movie', 53: 'Thriller', 10752: 'War', 37: 'Western' };
+const TV_GENRE_NAMES = { 10759: 'Action & Adventure', 16: 'Animation', 35: 'Comedy', 80: 'Crime', 99: 'Documentary', 18: 'Drama', 10751: 'Family', 10762: 'Kids', 9648: 'Mystery', 10763: 'News', 10764: 'Reality', 10765: 'Sci-Fi & Fantasy', 10766: 'Soap', 10767: 'Talk', 10768: 'War & Politics', 37: 'Western' };
+
 
 /**
  * Fonction qui vérifie si le paramètre est vide ou pas
@@ -54,16 +61,16 @@ router.get('/get/:token', (req, res) => {
  */
 router.get('/get/media/:id', async (req, res) => {
 
-    try{
-        const listMedia = await MovieLists.find({ _id: req.params.id})
+    try {
+        const listMedia = await MovieLists.find({ _id: req.params.id })
         if (!MovieLists) {
             return res.status(404).json({ success: false, message: "List non trouvée" });
-          }
+        }
 
         console.log("movie result:", listMedia.movie)
-        res.status (200).json({ success: true, listMedia })
+        res.status(200).json({ success: true, listMedia })
 
-    }catch(error){
+    } catch (error) {
         console.error('Error occurred:', error);
         res.status(500).json({ success: false, message: error.message });
     }
@@ -114,6 +121,7 @@ router.post('/add/:token', async (req, res) => {
                         user.created_list.push(newDoc._id);
                         user.save()
                         console.log("user created_list:", user)
+                        console.log("type:", req.body.types)
                         console.log("movies:", movieslists)
                         res.status(200).json({ result: true, result: newDoc }) //movieLists
                     })
@@ -147,7 +155,7 @@ async function addMedia(filters) {
 
 
     let {
-        type,
+        types,
         genres,
         isAdult,
         isVideo,
@@ -160,11 +168,11 @@ async function addMedia(filters) {
         providers
     } = filters
 
-    type = "movie";
     genresData = genres;
-    genres =  isEmpty(genres) ? "" : genres.map(genre => {return genre.id }).slice(",").join("|");
-    providers =  isEmpty(providers) ? "" : providers.lenght === 1 ? providers[0].toString() : providers.slice(",").join("|");
-    average =  isEmpty(average) ? "" : Number.parseInt(average);
+    let type = types[0].toLowerCase();
+    genres = isEmpty(genres) ? "" : genres.map(genre => { return genre.id }).slice(",").join("|");
+    providers = isEmpty(providers) ? "" : providers.lenght === 1 ? providers[0].toString() : providers.slice(",").join("|");
+    average = isEmpty(average) ? "" : Number.parseInt(average);
 
 
     let include_adult = isEmpty(isAdult) ? `&include_adult=${false}` : `&include_adult=${isAdult}`;
@@ -181,72 +189,53 @@ async function addMedia(filters) {
     let totalPages;
     let totalResult;
 
-    //console.log("req.body:", req.body)
-    //console.log("types", type)
+    //console.log("req.body:", req.body.types)
+    console.log("types", filters.types)
+
+    //Mémo url dicover de TMDB qui a été personnalisé avec les variables en paamètres :
 
     //const urlModulable = `https://api.themoviedb.org/3/discover/${types}?include_adult=${isAdult}&include_video=${isVideo}&language=${language}&page=${Number.parseInt(page)}&release_date.gte=${releaseDateGte.toString()}&release_date.lte=${releaseDateLte.toString()}&sort_by=${sortBy}&vote_average.gte=${average}&with_genres=${genres}&with_watch_providers=${providers}&api_key=${API_KEY}`;
     const urlModulable = `https://api.themoviedb.org/3/discover/${type}?${include_adult}${include_video}${languageChoice}${pageSelect}${release_dateGte}${release_dateLte}${sort_by}${vote_averageGte}${with_genres}${with_watch_providers}&api_key=${API_KEY}`;
+    //const urlFetchTV = `https://api.themoviedb.org/3/discover/tv?${include_adult}${include_video}${languageChoice}${pageSelect}${release_dateGte}${release_dateLte}${sort_by}${vote_averageGte}${with_genres}${with_watch_providers}&api_key=${API_KEY}`;
+    //console.log("url", urlModulable)
 
-    console.log("url", urlModulable)
+
+    // if (types.length === 1 && types[0] === "Movie") {
+    //     const response = await fetch(urlFetchMovie)
+    //     //const response = await Promise.all([urlfetchMovie, urlFetchTV]) 
+    // }
+    // else if (types.length === 1 && types[0] === "TV") {
+    //     const response = await fetch(urlFetchTV)
+    // }
 
     const response = await fetch(urlModulable)
     const data = await response.json()
 
-    console.log("DATA", data)
+    console.log("DATA", response)
 
     let contenu = [];
 
     const listMedia = data.results.map((item) => {
         //type = item.media_type === 'movie' ? 'movie' : 'tv';
         const releaseDate = moment(item.release_date || item.first_air_date).format('YYYY-MM-DD');
-        const genresName = [];
-        item.genre_ids.map((genreId) => {
-            for(let i = 0; i < genresData.lenght; i++){
-                if(genresData[i].id === genreId){
-                    genresName.push(genresData[i].name)
-                }
-            }
-
-        })
 
         return {
 
-
-            type: type === 'movie' ? 'film' : 'série',
+            type: item.type === 'movie' ? 'Film' : 'Série',
             titre: item.title || item.name,
             annee: releaseDateGte,
             description: item.overview,
-            genre: genresName.join(","),
+            genre: item.genre_ids ? item.genre_ids.map(id => type === 'movie' ? MOVIE_GENRE_NAMES[id] : TV_GENRE_NAMES[id]).join(", ") : [],
             poster: item.poster_path,
             id: item.id,
             popularite: item.vote_average,
-            vote:item.vote_count,
-            // providers: [{
-            //     providerId: Number,
-            //     providerName: String,
-            //     logoPath: String
-            //   }],
-            // link: String
-
-
-
-            // id: item.id,
-
-            // type: type === 'movie' ? 'film' : 'série',
-            // titre: item.title || item.name,
-            // annee: releaseDateGte, // Date formatée au format YYYY-MM-DD
-            // description: item.overview,
-            // //genre: item.genre_ids ? item.genre_ids.map(id => type === 'movie' ? MOVIE_GENRE_NAMES[id] : TV_GENRE_NAMES[id]) : [],
-            // poster: item.poster_path,
-            // id: item.id,
-            // popularite: item.vote_average,
-            // vote: item.vote_count,
-            // // plateformes: providers.map(p => ({
-            // //   id: p.provider_id,
-            // //   nom: p.provider_name,
-            // //   logo: p.logo_path
-            // // })),
-            // //lien: link,
+            vote: item.vote_count,
+            // plateformes: providers.map(p => ({
+            //     id: p.provider_id,
+            //     nom: p.provider_name,
+            //     logo: p.logo_path
+            //   })),
+            // link: link,
         }
     })
 
@@ -268,48 +257,48 @@ router.delete("delete/:id/:token", async (req, res) => {
 
         MovieLists.findOne({ _id: req.params.id, creator: req.params.token }).then((data) => {
             if (data) {
-              MovieLists.deleteOne({
-                _id: req.params.id,
-              }).then((deletedDoc) => {
-                if (deletedDoc.deletedCount > 0) {
-                  MovieLists.find().then((data) => {
-                    res.status(200).json({ result: true, token: data.id });
-                  })
-                } else {
-                  res.status(400).json({ result: false, error: "MovieList not found" });
+                MovieLists.deleteOne({
+                    _id: req.params.id,
+                }).then((deletedDoc) => {
+                    if (deletedDoc.deletedCount > 0) {
+                        MovieLists.find().then((data) => {
+                            res.status(200).json({ result: true, token: data.id });
+                        })
+                    } else {
+                        res.status(400).json({ result: false, error: "MovieList not found" });
+                    }
                 }
-              }
-            )
+                )
             } else {
-              res.status(500).json({ success: false, message: "Erreur serveur", error: error.message });
+                res.status(500).json({ success: false, message: "Erreur serveur", error: error.message });
             }
-          });
+        });
     } catch (error) {
         res.status(500).json({ success: false, message: "Erreur serveur", error: error.message });
     }
 
- 
-  });
 
-router.get('/get/:token/:id', async(req, res) => {
+});
 
-        try{
-            MovieLists.findById(req.params.id)
-                .then(data => {
-                    if(data){
-                        
-                        console.log(" result show:", data.creator)
-                        res.status (200).json({ success: true, result: data })
-                    }
-                    else{
-                        return res.status(404).json({ result: false, error: "List non trouvée pour cet utilisateur" });
-                    }
-                })
-              
-        }catch(error){
-            console.error('Error occurred:', error);
-            res.status(500).json({ success: false, message: error.message });
-        }
+router.get('/get/:token/:id', async (req, res) => {
+
+    try {
+        MovieLists.findById(req.params.id)
+            .then(data => {
+                if (data) {
+
+                    console.log(" result show:", data.creator)
+                    res.status(200).json({ success: true, result: data })
+                }
+                else {
+                    return res.status(404).json({ result: false, error: "List non trouvée pour cet utilisateur" });
+                }
+            })
+
+    } catch (error) {
+        console.error('Error occurred:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
 
 
 

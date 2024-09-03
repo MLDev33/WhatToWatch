@@ -5,6 +5,7 @@
 async function getProviderDetails(type, id, BASE_URL, API_KEY) {
     const url = `${BASE_URL}/${type}/${id}/watch/providers?api_key=${API_KEY}`;
     try {
+      console.log("in function getprovider")
       const response = await fetch(url);
       const data = await response.json();
       //data contient results , avec une clé langue et une clé flatrate : {FR : {link : '', flatrate : []}}
