@@ -97,7 +97,7 @@ router.post('/add/:token', async (req, res) => {
         User.findOne({ token: req.params.token.toString() })
             .then(async data => {
                 if (data) {
-                    const movieslists = await addMediaMovies(req.body)
+                    const movieslists = await addMediaMovies(req.body, 1)
                     const newMovieLists = new MovieLists({
                         token: data.token,
                         list_name: req.body.list_name,
@@ -150,7 +150,7 @@ router.post('/add/:token', async (req, res) => {
  * @param {(number|boolean|string|[]|{})} filters 
  * @returns un tableau d'objets contenant les media proposés à l'utilisateurs
  */
-async function addMediaMovies(filters) {
+async function addMediaMovies(filters, pagefilter) {
 
 
     let {
@@ -159,7 +159,6 @@ async function addMediaMovies(filters) {
         isAdult,
         isVideo,
         language,
-        page,
         releaseDateGte,
         releaseDateLte,
         sortBy,
@@ -167,6 +166,7 @@ async function addMediaMovies(filters) {
         providers
     } = filters
 
+    let page = pagefilter;
     let type = "movie"; // variable overrride => pb d'utilisation de Promise.all([ , ])
     genres = isEmpty(genres) ? "" : genres.map(genre => { return genre.id }).slice(",").join("|");
     providers = isEmpty(providers) ? "" : providers.lenght === 1 ? providers[0].toString() : providers.slice(",").join("|");
@@ -176,7 +176,7 @@ async function addMediaMovies(filters) {
     let include_adult = isEmpty(isAdult) ? `&include_adult=${false}` : `&include_adult=${isAdult}`;
     let include_video = isEmpty(isVideo) ? `&include_video=${false}` : `&include_video=${isAdult}`;
     let languageChoice = isEmpty(language) ? `&language=${"fr-Fr"}` : `&language=${language}`;
-    let pageSelect = isEmpty(language) ? `&page=${1}` : `&page=${Number.parseInt(page)}`;
+    let pageSelect = isEmpty(page) ? `&page=${1}` : `&page=${Number.parseInt(page)}`;
     let release_dateGte = isEmpty(releaseDateGte) ? `` : `&release_date.gte=${releaseDateGte.toString()}-01-01`;
     let release_dateLte = isEmpty(releaseDateLte) ? `` : `&release_date.lte=${releaseDateLte.toString()}`;
     let sort_by = isEmpty(sortBy) ? `&sort_by=${"popularity.desc"}` : `&sort_by=${sortBy}`;
@@ -227,7 +227,46 @@ async function addMediaMovies(filters) {
 }
 
 
+router.put('/moremedia/:id', async (req, res) => {
+    try {
+        const listMedia = await MovieLists.findById(req.params.id)
+        if (!MovieLists) {
+            return res.status(404).json({ success: false, message: "List non trouvée" });
+        }
 
+        const moreMedia = await addMediaMovies(req.body, page++)
+        
+
+        MovieLists.updateOne(
+            {movies: listMedia.movies},
+            {movie: [...listMedia.movies, moreMedia]}
+
+
+        ).then(() => {
+            MovieLists.find().then(data => {
+                console.log(data);
+            });
+        });
+
+        console.log("movie result:", listMedia.movie)
+        res.status(200).json({ success: true, listMedia })
+
+    } catch (error) {
+        console.error('Error occurred:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+
+})
+
+
+
+
+
+
+
+
+
+//route à finir
 router.delete("delete/:id/:token", async (req, res) => {
 
     try {
