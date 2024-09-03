@@ -6,6 +6,7 @@ const User = require("../models/users");
 const { checkBody } = require("../modules/checkBody");
 const uid2 = require("uid2");
 const bcrypt = require("bcrypt");
+const MovieList = require("../models/movielists.js");
 
 /* GET users listing. */
 router.get("/", function (req, res, next) {

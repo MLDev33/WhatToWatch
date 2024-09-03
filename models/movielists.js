@@ -7,12 +7,14 @@ const movieListSchema = mongoose.Schema({
     members: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     options: [
         {
-            content_type: String,
+            content_type: Array, // Modification String en Array par rapport du schema initial 
             genre: Array,
             streaming_platform: Array,
+            average: String, // Ajout au schema initial
+            releaseDateGte: String // Ajout au schema initial
         }
     ],
-    movies: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Media' }],
+    movies: Array, //[{ type: mongoose.Schema.Types.ObjectId, ref: 'Media' }],
     movie_liked: [{
         movie_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Media' },
         liked_by: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },

@@ -12,7 +12,10 @@ require('./models/movielists');
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
-var movieRouter = require('./routes/movies')
+var movieRouter = require('./routes/movies');
+const movielistsRouter = require('./routes/movielists');
+const genresRouter = require('./routes/genres');
+const providersRouter = require('./routes/providers');
 
 var app = express();
 app.use(cors())
@@ -24,6 +27,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
-app.use('/movies', movieRouter)
+app.use('/movies', movieRouter);
+app.use('/movielists', movielistsRouter);
+app.use('/genres', genresRouter);
+app.use('/providers', providersRouter);
 
 module.exports = app;

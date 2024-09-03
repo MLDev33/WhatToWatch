@@ -482,7 +482,7 @@ router.get('/user-likes', async (req, res) => {
     }
 
     const likedMedia = user.liked_movies.map(media => ({
-      ...media.toObject(),
+      //...media.toObject(),
       likedAt: media.likedAt || new Date()
     }));
 
