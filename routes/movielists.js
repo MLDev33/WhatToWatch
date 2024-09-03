@@ -4,9 +4,7 @@ const fetch = require('node-fetch');
 const MovieLists = require('../models/movielists');
 const User = require('../models/users');
 const Media = require('../models/media.js');
-const { checkBody } = require('../modules/checkBody');
-const { getProviderDetails } = require('../modules/getProviderDetails.js')
-const { fetchPaginatedData } = require('../modules/fetchPagination.js')
+const { getMoviesProviders } = require('../modules/getMoviesProviders.js')
 const moment = require('moment');
 
 const API_KEY = process.env.API_KEY;
@@ -190,7 +188,7 @@ async function addMedia(filters) {
     //console.log("types", type)
 
     //const urlModulable = `https://api.themoviedb.org/3/discover/${types}?include_adult=${isAdult}&include_video=${isVideo}&language=${language}&page=${Number.parseInt(page)}&release_date.gte=${releaseDateGte.toString()}&release_date.lte=${releaseDateLte.toString()}&sort_by=${sortBy}&vote_average.gte=${average}&with_genres=${genres}&with_watch_providers=${providers}&api_key=${API_KEY}`;
-    const urlModulable = `https://api.themoviedb.org/3/discover/${type}?${include_adult}${include_video}${languageChoice}${pageSelect}${release_dateGte}${release_dateLte}${sort_by}${vote_averageGte}${with_genres}${with_watch_providers}&api_key=${API_KEY}`;
+    const urlModulable = `${BASE_URL}/discover/${type}?${include_adult}${include_video}${languageChoice}${pageSelect}${release_dateGte}${release_dateLte}${sort_by}${vote_averageGte}${with_genres}${with_watch_providers}&api_key=${API_KEY}`;
 
     console.log("url", urlModulable)
 
@@ -201,8 +199,11 @@ async function addMedia(filters) {
 
     let contenu = [];
 
-    const listMedia = data.results.map((item) => {
-        const releaseDate = moment(item.release_date || item.first_air_date).format('YYYY-MM-DD');
+    const listMedia = data.results.map(async (item) => {
+        const movieId = item.id;
+        const releaseDateGte = moment(item.release_date || item.first_air_date).format('YYYY-MM-DD');
+
+        //const { listProviders, watchLink } = await getMoviesProviders(movieId, BASE_URL, API_KEY)
 
         return {
             type: item.type === 'movie' ? 'Film' : 'Série',
@@ -217,11 +218,12 @@ async function addMedia(filters) {
             // plateformes: providers.map(p => ({
             //     id: p.provider_id,
             //     nom: p.provider_name,
-            //     logo: p.logo_path
+            //     logo: p.logo_path // Utilisez directement le logo_path du fournisseur
             //   })),
-            // link: link,
+            // link: watchLink,
         }
     })
+    console.log("listMedia:", listMedia)
     return listMedia
 }
 
