@@ -103,7 +103,7 @@ router.post('/add/:token', async (req, res) => {
                             streaming_platform: req.body.providers,
                             // average, releaseDateGte et ReleaseDateLte à rajouter au schema initial de movielists
                             average: req.body.rating,
-                            // releaseDateGte: req.body.releaseDateGte,
+                            releaseDateGte: req.body.releaseDateGte,
                             // releaseDateLte: req.body.releaseDateLte,
                         },
                         avatar: req.body.avatar,
@@ -170,7 +170,7 @@ async function addMedia(filters) {
     let include_video = isEmpty(isVideo) ? `&include_video=${false}` : `&include_video=${isAdult}`;
     let languageChoice = isEmpty(language) ? `&language=${"fr-Fr"}` : `&language=${language}`;
     let pageSelect = isEmpty(language) ? `&page=${1}` : `&page=${Number.parseInt(page)}`;
-    let release_dateGte = isEmpty(releaseDateGte) ? `` : `&release_date.gte=${releaseDateGte.toString()}`;
+    let release_dateGte = isEmpty(releaseDateGte) ? `` : `&release_date.gte=${releaseDateGte.toString()}-01-01`;
     let release_dateLte = isEmpty(releaseDateLte) ? `` : `&release_date.lte=${releaseDateLte.toString()}`;
     let sort_by = isEmpty(sortBy) ? `&sort_by=${"popularity.desc"}` : `&sort_by=${sortBy}`;
     let vote_averageGte = isEmpty(average) ? `` : `&vote_average.gte=${average}`;
@@ -286,7 +286,8 @@ router.get('/get/:token/:id', async(req, res) => {
         try{
             MovieLists.findById(req.params.id)
                 .then(data => {
-                    if(data.creator.toString === req.params.id.toString){
+                    if(data){
+                        
                         console.log(" result show:", data.creator)
                         res.status (200).json({ success: true, result: data })
                     }

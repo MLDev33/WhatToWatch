@@ -11,6 +11,7 @@ const movieListSchema = mongoose.Schema({
             genre: Array,
             streaming_platform: Array,
             average: String, // Ajout au schema initial
+            releaseDateGte: String // Ajout au schema initial
         }
     ],
     movies: Array, //[{ type: mongoose.Schema.Types.ObjectId, ref: 'Media' }],
