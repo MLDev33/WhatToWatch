@@ -111,7 +111,7 @@ router.get('/user/lists/:token', async (req, res) => {
  * @param { token }
  * 
  */
-router.post('/add/:token', async (req, res) => {
+router.post('/add/:type/:token', async (req, res) => {
 
     try {
         // Vérification de l'utilisateur
@@ -124,7 +124,7 @@ router.post('/add/:token', async (req, res) => {
         User.findOne({ token: req.params.token.toString() })
             .then(async data => {
                 if (data) {
-                    const movieslists = await addMediaMovies(req.body, 1)
+                    const movieslists = await addMedia(req.body, 1 , req.params.type)
                     const newMovieLists = new MovieLists({
                         token: data.token, // remplacer par id user
                         list_name: req.body.list_name,
@@ -177,11 +177,11 @@ router.post('/add/:token', async (req, res) => {
  * @param {(number|boolean|string|[]|{})} filters 
  * @returns un tableau d'objets contenant les media proposés à l'utilisateurs
  */
-async function addMediaMovies(filters, pagefilter) {
+async function addMedia(filters, pagefilter, type) {
 
 
     let {
-        types, // req.body.types "ATTENTION" Pour tuiliser la valeur mettre ne pas oublier le "s"
+        //type, // variable overrride => pb d'utilisation de Promise.all([ , ])
         genres,
         isAdult,
         isVideo,
@@ -193,8 +193,8 @@ async function addMediaMovies(filters, pagefilter) {
         providers
     } = filters
 
+    
     let page = pagefilter;
-    let type = "movie"; // variable overrride => pb d'utilisation de Promise.all([ , ])
     genres = isEmpty(genres) ? "" : genres.map(genre => { return genre.id }).slice(",").join("|");
     providers = isEmpty(providers) ? "" : providers.lenght === 1 ? providers[0].toString() : providers.slice(",").join("|");
     average = isEmpty(average) ? "" : Number.parseInt(average);
@@ -232,7 +232,7 @@ async function addMediaMovies(filters, pagefilter) {
         const releaseDateGte = moment(item.release_date || item.first_air_date).format('YYYY-MM-DD');
 
         return {
-            type: item.type === 'movie' ? 'Film' : 'Série',
+            type: type === 'movie' ? 'Film' : 'Série',
             titre: item.title || item.name,
             annee: releaseDateGte,
             description: item.overview,
