@@ -8,7 +8,7 @@ const BASE_URL = 'https://api.themoviedb.org/3';
 const language = "fr-FR" // ou req.params.language;
 
 /**
- * Route pou récupérer les provider des media de type movie
+ * Route pou récupérer les providers des media de type movie
  */
 router.get('/get/movie', async (req, res) => {
 
@@ -82,7 +82,7 @@ async function getTvProviders(list) {
     })
     
     console.log("lengt tv:", list.length, "DATA ALL", list)
-    return list
+    //return list
 
 
 

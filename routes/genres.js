@@ -31,7 +31,7 @@ router.get('/get/tv', (req, res) => {
     fetch(`${BASE_URL}/genre/tv/list?language=${language}&api_key=${API_KEY}`)
     .then(response => response.json())
     .then(data => {
-        //data.map((genre) => { genreTV.push(genre)})
+    
        
         res.json({results: data})
         genreTV = data.genres;
