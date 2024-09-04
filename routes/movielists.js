@@ -75,7 +75,34 @@ router.get('/get/media/:id', async (req, res) => {
     }
 })
 
+// Route pour consulter les lists déjà existantes de l'utilisateur
+router.get('/user/lists/:token', async (req, res) => {
 
+
+    try {
+      const user = await User.findOne({ token: req.params.token }).populate('created_list');
+      console.log("user await:",user)
+      if (!user) {
+        return res.status(404).json({ success: false, message: "Utilisateur non trouvé" });
+      }
+  
+      const listsMedia = user.created_list.map(list => ({
+        ...list.toObject(),
+      }));
+  
+      console.log("lists:",listsMedia)
+  
+      res.status(200).json({ 
+        success: true, 
+        listsMedia,
+        totalList: listsMedia.length
+      });
+  
+            
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Erreur serveur", error: error.message });
+    }
+  })
 
 /**
  * Route pour sauvegarder les paramètres d'une liste à sa création
