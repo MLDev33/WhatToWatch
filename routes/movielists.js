@@ -7,6 +7,8 @@ const Media = require('../models/media.js');
 const { getMoviesProviders } = require('../modules/getMoviesProviders.js')
 const moment = require('moment');
 
+
+
 const API_KEY = process.env.API_KEY;
 const BASE_URL = 'https://api.themoviedb.org/3';
 
@@ -26,7 +28,19 @@ function isEmpty(variable) {
     return variable === null || variable === undefined || variable === "" || variable.length === 0
 }
 
-
+async function getProviderDetails(type, id) {
+    const url = `${BASE_URL}/${type}/${id}/watch/providers?api_key=${API_KEY}`;
+    try {
+      const response = await fetch(url);
+      const data = await response.json();
+      const providers = data.results?.FR?.flatrate || [];
+      const link = data.results?.FR?.link || '';
+      return { providers, link };
+    } catch (error) {
+      console.error(`Error fetching provider details for ${type} with ID ${id}:`, error);
+      return { providers: [], link: '' };
+    }
+  }
 /**
  * Fonction qui vérifie si le paramètre est un array ou s'il est vide
  * 
@@ -45,12 +59,16 @@ function isArray(array) {
  */
 router.get('/get/:token', (req, res) => {
     MovieLists.find({ token: req.params.token.toString() })
+        .populate('movies') // Remplit les informations des films dans le champ movies
         .then(data => {
             console.log("lists:", data);
-            res.json({ result: true, userLists: data })
+            res.json({ result: true, userLists: data });
         })
-})
-
+        .catch(error => {
+            console.error("Erreur lors de la récupération des listes:", error);
+            res.status(500).json({ result: false, message: "Erreur serveur" });
+        });
+});
 
 /**
  * Route pour voir les lists de l'utilisateur avec l'id de la list
@@ -90,7 +108,7 @@ router.get('/user/lists/:token', async (req, res) => {
         ...list.toObject(),
       }));
   
-      console.log("lists:",listsMedia)
+      console.log("listse:",listsMedia)
   
       res.status(200).json({ 
         success: true, 
@@ -195,14 +213,14 @@ async function addMedia(filters, pagefilter, type) {
 
     
     let page = pagefilter;
-    genres = isEmpty(genres) ? "" : genres.map(genre => { return genre.id }).slice(",").join("|");
-    providers = isEmpty(providers) ? "" : providers.lenght === 1 ? providers[0].toString() : providers.slice(",").join("|");
+    genres = isEmpty(genres) ? "" : genres.map(genre => genre.id).join("|");
+    providers = isEmpty(providers) ? "" : providers.length === 1 ? providers[0].toString() : providers.join("|");
     average = isEmpty(average) ? "" : Number.parseInt(average);
 
-
+ 
     let include_adult = isEmpty(isAdult) ? `&include_adult=${false}` : `&include_adult=${isAdult}`;
     let include_video = isEmpty(isVideo) ? `&include_video=${false}` : `&include_video=${isAdult}`;
-    let languageChoice = isEmpty(language) ? `&language=${"fr-Fr"}` : `&language=${language}`;
+    let languageChoice = isEmpty(language) ? `&language=${"fr-FR"}` : `&language=${language}`;
     let pageSelect = isEmpty(page) ? `&page=${1}` : `&page=${Number.parseInt(page)}`;
     let release_dateGte = isEmpty(releaseDateGte) ? `` : `&release_date.gte=${releaseDateGte.toString()}-01-01`;
     let release_dateLte = isEmpty(releaseDateLte) ? `` : `&release_date.lte=${releaseDateLte.toString()}`;
@@ -225,12 +243,12 @@ async function addMedia(filters, pagefilter, type) {
     console.log("DATA", data)
 
     let contenu = [];
+    //const movieId = item.id;
+    //const { listProviders, watchLink } = await getMoviesProviders(movieId, BASE_URL, API_KEY)
 
-    const listMedia = data.results.map((item) => {
-        //const movieId = item.id;
-        //const { listProviders, watchLink } = await getMoviesProviders(movieId, BASE_URL, API_KEY)
+    const listMedia = await Promise.all(data.results.map(async (item) => {
         const releaseDateGte = moment(item.release_date || item.first_air_date).format('YYYY-MM-DD');
-
+        const { providers } = await getProviderDetails(type, item.id);
         return {
             type: type === 'movie' ? 'Film' : 'Série',
             titre: item.title || item.name,
@@ -241,14 +259,13 @@ async function addMedia(filters, pagefilter, type) {
             id: item.id,
             popularite: item.vote_average,
             vote: item.vote_count,
-            // plateformes: providers.map(p => ({
-            //     id: p.provider_id,
-            //     nom: p.provider_name,
-            //     logo: p.logo_path // Utilisez directement le logo_path du fournisseur
-            //   })),
-            // link: watchLink,
-        }
-    })
+            plateformes: providers.map(p => ({
+                id: p.provider_id,
+                nom: p.provider_name,
+                logo: p.logo_path
+            })),
+        };
+    }));
     console.log("data:", data);
     return listMedia
 }
